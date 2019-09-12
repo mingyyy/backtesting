@@ -39,9 +39,10 @@ with different holdings of the coins and testing out one or two simple margin st
 
 ##### Data Ingestion
 MVP: 
-1. download .zip from kaggle to local machine, unzip and upload to S3 bucket as .csv files.
-1.1. move from othe's S3 bucket to my bucket ($aws s3 sync <path or s3url> to <path or s3 url: s3://huge-stock-data>)
-
+1. Raw Data
+    - Download .zip from kaggle to local machine, unzip and upload to S3 bucket as .csv files.
+    - Copy from othe's S3 bucket to my bucket ($aws s3 sync <path or s3url> to <path or s3 url: s3://huge-stock-data>)
+      Source: https://registry.opendata.aws/deutsche-boerse-pds/
 2. generate dummy trading strategy and test on those datasets python. pyspark (?)
     
     - same amount every n days (n from 1 to 90) on random stocks over all.
