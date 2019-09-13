@@ -3,14 +3,15 @@ import pandas as pd
 
 # connect to S3
 s3 = boto3.client('s3')
+resource = boto3.resource('s3') #high-level object-oriented API
+
 
 # connects to S3 using the default profile credentials and lists all the S3 buckets
 # buckets = s3.list_buckets()
 # for bucket in buckets['Buckets']:
 #     print(bucket['CreationDate'].ctime(), bucket['Name'])
 
-# # select bucket
-# my_bucket = s3.Bucket('testing_ming')
+# my_bucket = resource.Bucket('testing_ming')
 # # download file into current directory
 # for s3_object in my_bucket.objects.all():
 #     # Need to split s3_object.key into path and file name, else it will give error file not found.
@@ -22,13 +23,16 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO # Python 3.x
 
-
 bucket_name = 'testing-ming'
+my_bucket = resource.Bucket(bucket_name)
+files = list(my_bucket.objects.all())
 
-object_key = 'historical_stocks.csv'
-csv_obj = s3.get_object(Bucket=bucket_name, Key=object_key)
-body = csv_obj['Body']
-csv_string = body.read().decode('utf-8')
+for f in files:
+    file_name = f.key
+    object_key = file_name
+    csv_obj = s3.get_object(Bucket=bucket_name, Key=object_key)
+    body = csv_obj['Body']
+    csv_string = body.read().decode('utf-8')
 
-df = pd.read_csv(StringIO(csv_string))
-print(df.head())
+    df = pd.read_csv(StringIO(csv_string))
+    print(df.head())
