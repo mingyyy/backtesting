@@ -13,8 +13,8 @@ conn = psycopg2.connect(
 # create a psycopg2 cursor that can execute queries
 cursor = conn.cursor()
 # create a new table with a single column called "name"
-# cursor.execute('''CREATE TABLE tutorials(name char(40);)''')
-# conn.commit()
+cursor.execute('''CREATE TABLE tutorials(name char(4);)''')
+conn.commit()
 # cursor.execute("""CREATE TABLE historical_prices(
 #             id serial PRIMARY KEY,
 #             date DATE NOT NULL,

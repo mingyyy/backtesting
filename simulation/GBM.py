@@ -30,5 +30,5 @@ if __name__ == "__main__":
         np.random.seed(i)
         y = GBM(S_0, T, mu, sigma, delta)
         plt.plot(y)
-    plt.title("GBM simulation different Seeds")
+    plt.title("GBM simulation with different Seeds")
     plt.show()

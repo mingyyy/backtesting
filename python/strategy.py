@@ -28,15 +28,20 @@ from datetime import datetime as dt
 #     csv_string = body.read().decode('utf-8')
 path = "./daily-historical-stock-prices-1970-2018/"
 
-df_price = pd.read_csv(path+'historical_stock_prices.csv', nrows=200)
+df_price = pd.read_csv(path+'historical_stock_prices.csv', nrows=200, index_col=7, parse_dates=True)
 df_stock = pd.read_csv(path+'historical_stocks.csv')
 
+# df_price = df_price.set_index('date')
+print(df_price['open'].head())
+print(df_price.dtypes)
 
-def s_buy_hold(stocks, start_date, end_date, invest=100, frequency=30):
+
+
+def one_stock_once(stocks, start_date, end_date, invest=100, frequency=30):
     # strategy 1. buy invest amount at start_date, calculate the PnL at end_date
     pnl = 0
     if dt.strptime(end_date, "%Y-%m-%d") <= dt.strptime(start_date, "%Y-%m-%d"):
-        return 'You end date is before your start date!'
+        return 'Your end date is before your start date!'
     if len(stocks) == 0:
         return 'You stock ticker is out of scope.'
     for stock in stocks:
@@ -60,9 +65,8 @@ def s_buy_hold(stocks, start_date, end_date, invest=100, frequency=30):
 if __name__ == "__main__":
     # print(df_price.head())
     
-    pnl = s_buy_hold(['AHH'], '2013-05-08', '2013-05-14')
+    pnl = one_stock_once(['AHH'], '2013-05-08', '2013-05-14')
     if type(pnl) is float:
         print(f'Pnl of your trade is {pnl:.2f}')
     else:
         print(pnl)
-
