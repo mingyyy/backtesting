@@ -1,6 +1,5 @@
 import psycopg2
-from secrete import db_password, db_user_name, end_point, db_id
-
+from secrete import db_password, db_user_name, end_point
 
 # use our connection values to establish a connection
 conn = psycopg2.connect(
@@ -12,8 +11,9 @@ conn = psycopg2.connect(
 )
 # create a psycopg2 cursor that can execute queries
 cursor = conn.cursor()
+
 # create a new table with a single column called "name"
-cursor.execute('''CREATE TABLE tutorials(name char(4);)''')
+cursor.execute('''CREATE TABLE tutorials(name char(4));''')
 conn.commit()
 # cursor.execute("""CREATE TABLE historical_prices(
 #             id serial PRIMARY KEY,
@@ -27,11 +27,15 @@ conn.commit()
 #             volume INT);""")
 
 cursor.execute("""INSERT INTO tutorials (name) VALUES ('APPL');""")
-# run a SELECT statement - no data in there, but we can try it
-cursor.execute("""SELECT * from tutorials""")
-conn.commit()  # <--- makes sure the change is shown in the database
+cursor.execute("""SELECT * from tutorials;""")
+conn.commit()
+
 rows = cursor.fetchall()
 print(rows)
+
+cursor.execute('''DROP TABLE tutorials;''')
+conn.commit()
+
 cursor.close()
 conn.close()
 
