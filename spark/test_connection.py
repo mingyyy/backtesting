@@ -34,7 +34,7 @@ def strategy_1(target_price=100, profit_perc=0.1):
     # find the moving average price 100 days
     df_movAvg = df_new.withColumn("ma100", avg(df_new.adj_close)
                                    .over(Window.partitionBy(df_new.date).rowsBetween(-100, 0)))
-    df_movAvg.filter(df_movAvg.ticker== 'AHH').rderBy(df_movAvg.ticker).show()
+    df_movAvg.filter(df_movAvg.ticker == 'AHH').orderBy(df_movAvg.ticker).show()
 
 
 if __name__ == '__main__':
