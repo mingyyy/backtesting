@@ -6,11 +6,14 @@ conn = psycopg2.connect(
     database='postgres',
     user="postgres",
     password=db_password,
-    host=end_point,
+    host="ec2-3-229-236-236.compute-1.amazonaws.com",
     port='5432'
 )
 # create a psycopg2 cursor that can execute queries
 cursor = conn.cursor()
+
+# cursor.execute('''DROP TABLE tutorials;''')
+# conn.commit()
 
 # create a new table with a single column called "name"
 cursor.execute('''CREATE TABLE tutorials(name char(4));''')
