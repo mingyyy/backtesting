@@ -8,7 +8,7 @@ import gc
 from pyspark.sql.window import Window
 
 
-def strategy_1(target_price=100, profit_perc=0.1):
+def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
     spark = SparkSession.builder \
                  .master("spark://ip-10-0-0-13:7077") \
                  .appName("historical prices") \
@@ -19,22 +19,25 @@ def strategy_1(target_price=100, profit_perc=0.1):
     bucket_name = "hist-price"
     file_name = "historical_stock_prices.csv"
     df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
-    df = df.drop('open', 'close', 'low', 'high')
+    df_base = df.drop('open', 'close', 'low', 'high')
 
     # get the list of stocks with more than 1 year records
-    df_gp_ticker = df.groupBy('ticker').agg({'date': 'count'})\
+    df_stock_list = df_base.groupBy('ticker').agg({'date': 'count'})\
       .select(col('ticker'), col('count(date)').alias('num_of_rec')).orderBy('count(date)')
-    df_stock_list = df_gp_ticker.filter(df_gp_ticker.num_of_rec > 250).drop(df_gp_ticker.num_of_rec)
+    df_stock_list = df_stock_list.filter(df_stock_list.num_of_rec > 250).drop(df_stock_list.num_of_rec)
     # release memory of the intermediate df
-    # del df_gp_ticker
+    # del df_stock_list
     # gc.collect()
 
-    # show the df_stock_list
-    df_new = df_stock_list.join(df, df_stock_list.ticker == df.ticker).drop(df_stock_list.ticker)
+    # show the df_stock_list:
+    # df = df_stock_list.join(df, df_stock_list.ticker == df.ticker).drop(df_stock_list.ticker)
+    df = df_stock_list.join(df_base, "ticker")
     # find the moving average price 100 days
-    df_movAvg = df_new.withColumn("ma100", avg(df_new.adj_close)
-                                   .over(Window.partitionBy(df_new.date).rowsBetween(-100, 0)))
-    df_movAvg.filter(df_movAvg.ticker == 'AHH').orderBy(df_movAvg.ticker).show()
+    df_movAvg = df.withColumn("ma100", avg(df.adj_close)\
+                                   .over(Window.partitionBy(df.date).rowsBetween(-10, 1)))
+    df_movAvg=df_movAvg.filter(df_movAvg.ticker == target_ticker).orderBy(df_movAvg.ticker, df_movAvg.date.desc())
+    df_movAvg.sample(False, 0.1, 1).show()
+
 
 
 if __name__ == '__main__':
