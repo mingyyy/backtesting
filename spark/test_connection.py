@@ -4,12 +4,12 @@ from pyspark.sql import DataFrameReader
 from pyspark.sql.context import SQLContext
 from pyspark.sql.functions import col, avg
 from pyspark.sql.window import Window
-
 from secrete import db_password
-import gc, configparser, psycopg2
+import psycopg2
+# import configparser
 
 
-def to_postgres(Tbl_name, fields, values):
+def to_postgres(Tbl_name, row):
     # use our connection values to establish a connection
     conn = psycopg2.connect(
         database='postgres',
@@ -21,7 +21,12 @@ def to_postgres(Tbl_name, fields, values):
     # create a psycopg2 cursor that can execute queries
     cursor = conn.cursor()
 
-    cursor.execute("INSERT INTO tutorials (name) VALUES ('APPL');")
+    def append_to_table(row):
+        cursor.execute("INSERT INTO" + Tbl_name + "(strategy_name, ticker, purchase_date, purchase_price, purchase_vol, PnL) "
+                                                  "VALUES('first_month_ma', %s, %s, %s, %s, %s)",
+                       (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL))
+
+
     cursor.execute('SELECT * from ' + Tbl_name + ';')
     conn.commit()
 
@@ -39,7 +44,7 @@ def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
     spark = SparkSession.builder \
                  .master("spark://ip-10-0-0-13:7077") \
                  .appName("historical prices") \
-                 .config("spark.some.config.option", "some-value") \
+                 .config("spark.jars", "postgresql-42.2.5.jar")\
                  .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
 
@@ -65,20 +70,29 @@ def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
     df_movAvg=df_movAvg.filter(df_movAvg.ticker == target_ticker).orderBy(df_movAvg.ticker, df_movAvg.date.desc())
     df_movAvg.sample(False, 0.1, 1).show()
 
-    to_postgres()
     # Create the Database properties
-    db_properties = {}
-    config = configparser.ConfigParser()
-    config.read("db_properties.ini")
-    db_prop = config['postgres']
-    db_url = db_prop['url']
-    db_name = db_prop['database']
-    db_properties['username'] = db_prop['username']
-    db_properties['password'] = db_prop['properties']
-    db_properties['url'] = db_url+db_name
-    db_properties['driver'] = db_prop['driver']
-    # Save the dataframe to the table.
-    df.write.jdbc(url=db_url, table='postgres.employee', mode='overwrite', properties=db_properties)
+    db_url='jdbc:postgresql://10.0.0.9:5432/postgres'
+    db_properties = {'username':'postgres',
+                    'password':db_password,
+                    'url':db_url,
+                    'driver':'org.postgresql.Driver'
+                    }
+    # config = configparser.ConfigParser()
+    # config.read("db_properties.ini")
+    # db_prop = config['postgres']
+    # db_url = db_prop['url']+db_prop['database']
+    # db_properties['username'] = db_prop['username']
+    # db_properties['password'] = db_prop['properties']
+    # db_properties['url'] = db_url
+    # db_properties['driver'] = db_prop['driver']
+
+    # Save the dataframe to the table. mode='append'
+    df_movAvg.write.jdbc(url=db_url, table='postgres.movAvg', mode='overwrite', properties=db_properties)
+
+    x=df.foreach(lambda x, y : {x: y})
+    print(x)
+
+
 
 if __name__ == '__main__':
     strategy_1()

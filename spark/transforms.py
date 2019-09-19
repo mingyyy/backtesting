@@ -4,6 +4,42 @@ from pyspark.sql.context import SQLContext
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from secrete import db_password
+import psycopg2
+
+
+def write_to_db(records):
+    # use our connection values to establish a connection
+    conn = psycopg2.connect(
+        database='postgres',
+        user="postgres",
+        password=db_password,
+        host="ec2-3-229-236-236.compute-1.amazonaws.com",
+        port='5432'
+    )
+    # create a psycopg2 cursor that can execute queries
+    cursor = conn.cursor()
+
+    # Convert Unicode to plain Python string: "encode"
+
+    ticker = records[0].encode("utf-8")
+    purchase_date = records[1]
+    purchase_price = records[2]
+    purchase_vol = records[3]
+    PnL = records[4]
+
+    # cursor.execute('''DELETE FROM  results;''')
+    # conn.commit()
+
+    cursor.execute("INSERT INTO results (strategy_name, ticker, purchase_date, purchase_price, purchase_vol, PnL)"
+                   " VALUES ('first_month_ma', '{}', '{}', {}, {}, {});".format(ticker, purchase_date, purchase_price, purchase_vol, PnL))
+    cursor.execute("""SELECT * from results;""")
+    conn.commit()
+
+    rows = cursor.fetchall()
+    # print(rows)
+
+    cursor.close()
+    conn.close()
 
 
 def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
@@ -55,9 +91,18 @@ def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, prof
 
     # df.sample(withReplacement=False, fraction=.01, seed=10).show()
     # df.filter(df.sell_price.isNotNull()).orderBy(df.date.desc()).show()
-    df = df.drop('ticker', 'adj_close', 'volume', 'ma100', 'previous_day', 'month', 'dayofmonth', 'buy' )
-    df.orderBy(df.date.desc()).show()
+    df = df.drop('adj_close', 'volume', 'ma100', 'previous_day', 'month', 'dayofmonth', 'buy' )
+    #df.orderBy(df.date.desc()).show()
 
+    # def f(x): print(x)
+    # df.take(10).foreach(f)
+
+    def get_val(row):
+        return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
+
+    for row in df.collect():
+        write_to_db(row)
 
 if __name__ == '__main__':
+
     strategy_1()
