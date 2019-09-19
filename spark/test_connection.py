@@ -1,11 +1,38 @@
 from pyspark import SparkContext, SparkConf
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg
 from pyspark.sql import DataFrameReader
 from pyspark.sql.context import SQLContext
-from secrete import db_password
-import gc
+from pyspark.sql.functions import col, avg
 from pyspark.sql.window import Window
+
+from secrete import db_password
+import gc, configparser, psycopg2
+
+
+def to_postgres(Tbl_name, fields, values):
+    # use our connection values to establish a connection
+    conn = psycopg2.connect(
+        database='postgres',
+        user='postgres',
+        password=db_password,
+        host='ec2-3-229-236-236.compute-1.amazonaws.com',
+        port='5432'
+    )
+    # create a psycopg2 cursor that can execute queries
+    cursor = conn.cursor()
+
+    cursor.execute("INSERT INTO tutorials (name) VALUES ('APPL');")
+    cursor.execute('SELECT * from ' + Tbl_name + ';')
+    conn.commit()
+
+    rows = cursor.fetchall()
+    print(rows)
+
+    # cursor.execute('''DROP TABLE temp;''')
+    # conn.commit()
+
+    cursor.close()
+    conn.close()
 
 
 def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
@@ -38,7 +65,20 @@ def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
     df_movAvg=df_movAvg.filter(df_movAvg.ticker == target_ticker).orderBy(df_movAvg.ticker, df_movAvg.date.desc())
     df_movAvg.sample(False, 0.1, 1).show()
 
-
+    to_postgres()
+    # Create the Database properties
+    db_properties = {}
+    config = configparser.ConfigParser()
+    config.read("db_properties.ini")
+    db_prop = config['postgres']
+    db_url = db_prop['url']
+    db_name = db_prop['database']
+    db_properties['username'] = db_prop['username']
+    db_properties['password'] = db_prop['properties']
+    db_properties['url'] = db_url+db_name
+    db_properties['driver'] = db_prop['driver']
+    # Save the dataframe to the table.
+    df.write.jdbc(url=db_url, table='postgres.employee', mode='overwrite', properties=db_properties)
 
 if __name__ == '__main__':
     strategy_1()

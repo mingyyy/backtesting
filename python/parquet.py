@@ -24,3 +24,7 @@ def csv2parquet(bucket_name='hist-price'):
                             filesystem=s3)
 
         print("File converted from CSV to parquet completed")
+
+
+if __name__ == "__main__":
+    csv2parquet("strategy-upload")
