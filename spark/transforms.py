@@ -6,7 +6,7 @@ from pyspark.sql.window import Window
 from secrete import db_password
 
 
-def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, profit_perc=0.1):
+def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
     '''
 
     :param target_ticker: The ticker of the targeted stock
@@ -29,7 +29,7 @@ def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, prof
     df= df.drop('open', 'close', 'low', 'high').filter(df.ticker == target_ticker)
 
     # function to calculate number of seconds from number of days
-    w = Window.orderBy(df.date.cast("timestamp").cast("long")).rowsBetween(-7, 0)
+    w = Window.orderBy(df.date.cast("timestamp").cast("long")).rowsBetween(-mvw, 0)
     # find the moving average price 100 days
     df = df.withColumn("ma100", F.avg(df.adj_close).over(w))
     df = df.withColumn('previous_day', F.lag(df.adj_close, 1,0).over(Window.orderBy(df.date)))
@@ -44,18 +44,18 @@ def strategy_1(target_ticker='AAPL', target_price=200, target_purchase=100, prof
     # print(df.dtypes, c1.dtypes)
     # condition2: moving avg is less than previous day close price
     df = df.filter(df.buy.isNotNull())
-    df = df.withColumn('buy_price', F.when(df.ma100 < df.previous_day, df.adj_close))
+    df = df.withColumn('purchase_price', F.when(df.ma100 < df.previous_day, df.adj_close))
     df = df.withColumn('buy_vol',
                          F.when(df.ma100 < df.previous_day, target_purchase/df.adj_close))
-    df = df.filter(df.buy_price.isNotNull())
-    df = df.withColumn('PnL', (target_price-df.buy_price)*df.buy_vol)
-
+    df = df.filter(df.purchase_price.isNotNull())
+    df = df.withColumn('PnL', (target_price - df.purchase_price) * df.buy_vol)
     # df = df.withColumn('end_price', )
     # df = df.withColumn('sell_price',
     #                      when(df.adj_close > (df.buy_price * (1+profit_perc)), df.adj_close))
 
     # df.sample(withReplacement=False, fraction=.01, seed=10).show()
     # df.filter(df.sell_price.isNotNull()).orderBy(df.date.desc()).show()
+    df = df.drop('ticker', 'adj_close', 'volume', 'ma100', 'previous_day', 'month', 'dayofmonth', 'buy' )
     df.orderBy(df.date.desc()).show()
 
 
