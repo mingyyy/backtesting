@@ -1,6 +1,4 @@
 from pyspark.sql import SparkSession
-from pyspark.sql import DataFrameReader
-from pyspark.sql.context import SQLContext
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from secrete import db_password
@@ -42,7 +40,7 @@ def write_to_db(records):
     conn.close()
 
 
-def strategy_1(target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
+def strategy_1(target_ticker='AAPL',target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
     '''
 
     :param target_ticker: The ticker of the targeted stock
@@ -62,7 +60,7 @@ def strategy_1(target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
     file_name = "historical_stock_prices.csv"
     df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
     # get the df for targeted stock only
-    df= df.drop('open', 'close', 'low', 'high') #.filter(df.ticker == target_ticker)
+    df= df.drop('open', 'close', 'low', 'high').filter(df.ticker == target_ticker)
 
     # function to calculate number of seconds from number of days
     w = Window.orderBy(df.date.cast("timestamp").cast("long")).rowsBetween(-mvw, 0)
@@ -85,24 +83,17 @@ def strategy_1(target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
                          F.when(df.ma100 < df.previous_day, target_purchase/df.adj_close))
     df = df.filter(df.purchase_price.isNotNull())
     df = df.withColumn('PnL', (target_price - df.purchase_price) * df.buy_vol)
-    # df = df.withColumn('end_price', )
-    # df = df.withColumn('sell_price',
-    #                      when(df.adj_close > (df.buy_price * (1+profit_perc)), df.adj_close))
 
-    # df.sample(withReplacement=False, fraction=.01, seed=10).show()
-    # df.filter(df.sell_price.isNotNull()).orderBy(df.date.desc()).show()
     df = df.drop('adj_close', 'volume', 'ma100', 'previous_day', 'month', 'dayofmonth', 'buy' )
     # df.show(10)
     # ticker, date, price, vol, pnl
-
-    # def f(x): print(x)
-    # df.take(10).foreach(f)
 
     def get_val(row):
         return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
 
     for row in df.collect():
         write_to_db(row)
+
 
 if __name__ == '__main__':
 
