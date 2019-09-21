@@ -4,7 +4,7 @@ from pyspark.sql import DataFrameReader
 from pyspark.sql.context import SQLContext
 from pyspark.sql.functions import col, avg
 from pyspark.sql.window import Window
-from secrete import db_password
+from secrete import db_password, end_point, db_name, db_user_name
 import psycopg2
 # import configparser
 
@@ -12,10 +12,10 @@ import psycopg2
 def to_postgres(Tbl_name, row):
     # use our connection values to establish a connection
     conn = psycopg2.connect(
-        database='postgres',
-        user='postgres',
+        database=db_name,
+        user=db_user_name,
         password=db_password,
-        host='ec2-3-229-236-236.compute-1.amazonaws.com',
+        host=end_point,
         port='5432'
     )
     # create a psycopg2 cursor that can execute queries
@@ -88,9 +88,6 @@ def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
 
     # Save the dataframe to the table. mode='append'
     df_movAvg.write.jdbc(url=db_url, table='postgres.movAvg', mode='overwrite', properties=db_properties)
-
-    x=df.foreach(lambda x, y : {x: y})
-    print(x)
 
 
 
