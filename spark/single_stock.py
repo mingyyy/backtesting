@@ -1,24 +1,23 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from secrete import db_password
+from secrete import db_password,end_point, db_name,db_user_name
 import psycopg2
 
 
 def write_to_db(records):
     # use our connection values to establish a connection
     conn = psycopg2.connect(
-        database='postgres',
-        user="postgres",
+        database=db_name,
+        user=db_user_name,
         password=db_password,
-        host="ec2-3-229-236-236.compute-1.amazonaws.com",
+        host=end_point,
         port='5432'
     )
     # create a psycopg2 cursor that can execute queries
     cursor = conn.cursor()
 
     # Convert Unicode to plain Python string: "encode"
-
     ticker = records[0].encode("utf-8")
     purchase_date = records[1]
     purchase_price = records[2]
@@ -92,6 +91,7 @@ def strategy_1(target_ticker='AAPL',target_price=200, target_purchase=100, profi
         return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
 
     for row in df.collect():
+
         write_to_db(row)
 
 
