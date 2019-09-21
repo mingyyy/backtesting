@@ -50,12 +50,12 @@ def send2S3(file_name):
 
     # delete file
     os.remove("../output/"+file_name)
-    print(file_name+'is removed!')
+    print(file_name+' is removed!')
 
 
 if __name__ == '__main__':
     number_of_prices = 12776
-    number_of_tickers=1
+    number_of_tickers=1300
     for i in range(0, number_of_tickers):
         file_name = 'si_{}.csv'.format(i)
         combine_files(date_generator(), price_generator(number_of_tickers, number_of_prices),file_name)
