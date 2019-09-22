@@ -3,8 +3,9 @@ from pyspark.sql import DataFrameReader
 from pyspark.sql.context import SQLContext
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from secrete import db_password, end_point, db_name, db_user_name
+from secrete import db_password, end_point, db_name, db_user_name, bucket_simulation, bucket_prices
 import psycopg2
+import sys
 
 
 def write_to_db(records):
@@ -55,38 +56,45 @@ def write_to_db(records):
     conn.close()
 
 
-def strategy_1_all(target_price=200, target_purchase=100, profit_perc=0.1, mvw=7):
+def strategy_1_all(profit_perc=.1, mvw=7):
     '''
 
-    :param target_ticker: The ticker of the targeted stock
-    :param target_price:
+    :param target_purchase: the target_purchase price
+    :param mvw: moving average window
     :param profit_perc: sell if the profit is 10% above the buying price
     :return:
     '''
     spark = SparkSession.builder \
                  .master("spark://ip-10-0-0-13:7077") \
-                 .appName("historical prices") \
+                 .appName("work with parquet file") \
                  .config("spark.some.config.option", "some-value") \
                  .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
+    # load parquet file
+    # bucket_name = bucket_simulation
+    # file_name = "*.parquet"
+    # df = spark.read.parquet("s3a://" + bucket_name + "/" + file_name)
+    # print(df.dtypes)
 
-    bucket_name = "hist-price"
-    file_name = "historical_stock_prices.csv"
+    # load csv file
+    bucket_name = bucket_prices
+    file_name = "*_prices.csv"
     df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
-    # get the df for targeted stock only
-    df= df.drop('open', 'close', 'low', 'high') #.filter(df.ticker == target_ticker)
+    df = df.drop('open', 'close', 'volume', 'high', 'low')
 
-    w = Window.partitionBy(df.ticker).orderBy(df.date)
-    df = df.withColumn('last_price', F.max(df.date).over(w))
+    w = Window.partitionBy(df.ticker).orderBy(df.date).rangeBetween(-sys.maxsize, sys.maxsize)
+    new_df = df.select(df.ticker, F.max(df.date).over(w)).dropDuplicates().sort(F.desc('date'))
+    new_df.show(10)
 
-    df.show(10)
+    # check if there is any null in the date
+    # df=df.filter(df.date.isNull())
+    # df.show(10)
 
-    table_name = 'results_all'
-
-    url = 'postgresql://10.0.0.9:5432//'+db_name
-    properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
-    df.write.jdbc(url='jdbc:%' % url, table=table_name, mode='overwrite', properties=properties)
+    # table_name = 'results_all'
+    # url = 'postgresql://10.0.0.9:5432//'+db_name
+    # properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
+    # df.write.jdbc(url='jdbc:%' % url, table=table_name, mode='overwrite', properties=properties)
 
     #
     # # function to calculate number of seconds from number of days

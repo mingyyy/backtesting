@@ -4,6 +4,7 @@ from pyspark.sql.context import SQLContext
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from secrete import bucket_simulation
+from pyspark.sql.types import StructType, StructField, DateType, StringType, NumericType
 
 
 
@@ -22,7 +23,14 @@ def load_files(bucket_name, app_name):
     quiet_logs(spark)
 
     # read in all csv files from this bucket to a single df
-    df = spark.read.csv("s3a://" + bucket_name + "/*.csv", header=True)
+
+    schema = StructType([
+        StructField("date", DateType()),
+        StructField("adj_close", NumericType()),
+        StructField("ticker", StringType())
+
+    ])
+    df = spark.read.csv("s3a://" + bucket_name + "/*.csv", header=True, schema=schema)
 
     # read in all parquet files from this bucket to a single df
     # df = spark.read.parquet("s3a://" + bucket_name + "/*.parquet", header=True)
