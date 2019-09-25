@@ -1,8 +1,6 @@
 import math
 import numpy as np
 import random
-import decimal
-import scipy.linalg
 import numpy.random as nrand
 import matplotlib.pyplot as plt
 import pandas as pd

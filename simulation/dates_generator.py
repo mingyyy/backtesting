@@ -2,6 +2,7 @@ import pandas as pd
 import boto3
 import uuid
 import os
+from secrete import bucket_simulation
 
 
 def create_dates(start='1970-01-05', end='2018-12-20'):
@@ -18,7 +19,7 @@ def create_dates(start='1970-01-05', end='2018-12-20'):
     export_csv = df.to_csv(r'{}{}'.format('../output/', file_name), index=None, header=True)
 
     # send to S3
-    bucket_name = 'simulated-bucket'
+    bucket_name = bucket_simulation
     resource = boto3.resource('s3')
     resource.Bucket(bucket_name).upload_file(Filename="../output/"+file_name, Key=file_name)
 
