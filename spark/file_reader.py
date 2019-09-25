@@ -1,11 +1,8 @@
 from pyspark.sql import SparkSession
-from pyspark.sql import DataFrameReader
-from pyspark.sql.context import SQLContext
-from pyspark.sql import functions as F
-from pyspark.sql.window import Window
-from secrete import bucket_simulation
-from pyspark.sql.types import StructType, StructField, DateType, StringType, NumericType
-
+from secrete import bucket_simulation, bucket_parquet, bucket_prices, bucket_large
+from pyspark.sql.types import StructType, StructField, DateType, StringType, DoubleType, IntegerType
+from pyspark import SparkContext
+from pyspark.sql import SQLContext
 
 
 def quiet_logs(spark):
@@ -14,33 +11,35 @@ def quiet_logs(spark):
   logger.LogManager.getLogger("akka").setLevel(logger.Level.ERROR)
 
 
-def load_files(bucket_name, app_name):
+def load_files(from_bucket, to_bucket, app_name):
     spark = SparkSession.builder \
-        .master("spark://ip-10-0-0-13:7077") \
         .appName(app_name) \
-        .config("spark.some.config.option", "some-value") \
         .getOrCreate()
+        # .config("spark.some.config.option", "some-value") \
+        # .getOrCreate()
     quiet_logs(spark)
 
     # read in all csv files from this bucket to a single df
 
     schema = StructType([
-        StructField("date", DateType()),
-        StructField("adj_close", NumericType()),
-        StructField("ticker", StringType())
-
+        StructField("date", DateType(), True),
+        StructField("ticker", StringType(), True),
+        StructField("sector", StringType(), True),
+        StructField("adj_close", StringType(), True),
+        StructField("high", StringType(), True),
+        StructField("low", StringType(), True),
+        StructField("open", StringType(), True),
+        StructField("close", StringType(), True),
+        StructField("volume", StringType(), True),
     ])
-    df = spark.read.csv("s3a://" + bucket_name + "/*.csv", header=True, schema=schema)
+    df = spark.read.csv("s3a://" + from_bucket + "/SIB_*", header=True)
 
     # read in all parquet files from this bucket to a single df
     # df = spark.read.parquet("s3a://" + bucket_name + "/*.parquet", header=True)
 
-    # df.describe().show()
-    df.explain()
-
     # write to the same bucket as a single parquet file
-    df.write.parquet("s3a://" + bucket_name + "/simulated01.parquet", mode="overwrite")
+    df.write.parquet("s3a://" + to_bucket + "/simulate_SIB.parquet", mode="overwrite")
 
 
 if __name__ == '__main__':
-    load_files(bucket_simulation,'load all csv files')
+    load_files(bucket_large, bucket_parquet,'load all SIB csv file')

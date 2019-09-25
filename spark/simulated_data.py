@@ -1,9 +1,7 @@
 from pyspark.sql import SparkSession
-from pyspark.sql import DataFrameReader
-from pyspark.sql.context import SQLContext
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from secrete import db_password, end_point, db_name, db_user_name, bucket_simulation, bucket_parquet, bucket_prices
+from secrete import db_password, end_point, db_name, db_user_name, bucket_parquet
 import psycopg2
 import sys
 
@@ -20,7 +18,6 @@ def write_to_db(records):
     # create a psycopg2 cursor that can execute queries
     cursor = conn.cursor()
     tbl_name = 'results_all'
-    # extra EBS
     # create a new table to store results
     cursor.execute('''CREATE TABLE IF NOT EXISTS {}(
                                             id serial PRIMARY KEY,
@@ -50,30 +47,29 @@ def write_to_db(records):
     cursor.execute("""SELECT * from {} LIMIT 5;""".format(tbl_name))
     conn.commit()
 
-    rows = cursor.fetchall()
+    # rows = cursor.fetchall()
     # print(rows)
 
     cursor.close()
     conn.close()
 
 
-def strategy_1_all(target_amount = 100, mvw=7):
+def strategy_1_all(bucket_name, file_name, target_amount = 100, mvw=7):
     '''
-    :param target_purchase: the target_purchase price
+    A naïve trading approach: buy at the beginning of each month if moving average price is less than previous close,
+    PnL is calculated with the last close and purchase price
+    :param target_amount: the amount purchase each Month
     :param mvw: moving average window
-    :param profit_perc: sell if the profit is 10% above the buying price
-    :return:
+    :return: Output to postgres
     '''
     spark = SparkSession.builder \
         .master("spark://ip-10-0-0-5:7077") \
-        .appName("work with parquet file") \
+        .appName("Transform SIO") \
         .config("spark.some.config.option", "some-value") \
         .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
     # load parquet file
-    bucket_name = bucket_parquet
-    file_name = "simulate_G.parquet"
     df = spark.read.option("inferSchema", "true").parquet("s3a://" + bucket_name + "/" + file_name)
 
     # load csv file
@@ -97,11 +93,6 @@ def strategy_1_all(target_amount = 100, mvw=7):
     # check if there is any null in the date
     # df=df.filter(df.date.isNotNull())
 
-    # table_name = 'results_all'
-    # url = 'postgresql://10.0.0.9:5432//'+db_name
-    # properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
-    # df.write.jdbc(url='jdbc:%' % url, table=table_name, mode='overwrite', properties=properties)
-
     # function to calculate number of seconds from number of days
     w = Window.orderBy(df.date.cast("timestamp").cast("long")).rowsBetween(-mvw, 0)
 
@@ -123,23 +114,14 @@ def strategy_1_all(target_amount = 100, mvw=7):
     df = df.filter(df.purchase_price.isNotNull())
     df = df.withColumn('PnL', (df.last_close - df.purchase_price) * df.purchase_vol)
 
-    # df.sample(withReplacement=False, fraction=.01, seed=10).show()
-    # df.filter(df.sell_price.isNotNull()).orderBy(df.date.desc()).show()
     df = df.drop('adj_close', 'volume', 'ma', 'previous_day', 'month', 'dayofmonth', 'purchase' )
-
-    df.printSchema()
+    # df.printSchema()
     df.withColumn('maxN', F.when((df.PnL > 100000000)|(df.purchase_price>100000000)|(df.purchase_vol>100000000), 0)).drop('maxN')
-    # ticker, last_close, date, price, vol, pnl
-
-    # def f(x): print(x)
-    # df.take(10).foreach(f)
-    #
-    # def get_val(row):
-    #     return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
-
+    # Col_names: ticker, last_close, date, price, vol, pnl
     for row in df.collect():
         write_to_db(row)
 
 
 if __name__ == '__main__':
-    strategy_1_all()
+    # bucket_parquet contains SIO, SIB
+    strategy_1_all(bucket_parquet, "simulate_G.parquet")
