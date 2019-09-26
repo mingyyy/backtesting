@@ -4,7 +4,7 @@ from pyspark.sql import DataFrameReader
 from pyspark.sql.context import SQLContext
 from pyspark.sql.functions import col, avg
 from pyspark.sql.window import Window
-from secrete import db_password, end_point, db_name, db_user_name
+from secrete import db_password, end_point, db_name, db_user_name, bucket_prices
 import psycopg2
 # import configparser
 
@@ -42,13 +42,12 @@ def to_postgres(Tbl_name, row):
 
 def strategy_1(target_ticker='AAPL', target_price=100, profit_perc=0.1):
     spark = SparkSession.builder \
-                 .master("spark://ip-10-0-0-13:7077") \
                  .appName("historical prices") \
                  .config("spark.jars", "postgresql-42.2.5.jar")\
                  .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
 
-    bucket_name = "hist-price"
+    bucket_name = bucket_prices
     file_name = "historical_stock_prices.csv"
     df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
     df_base = df.drop('open', 'close', 'low', 'high')

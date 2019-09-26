@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from secrete import db_password,end_point, db_name,db_user_name
+from secrete import db_password,end_point, db_name,db_user_name, bucket_prices
 import psycopg2
 
 
@@ -48,14 +48,13 @@ def strategy_1(target_ticker='AAPL',target_price=200, target_purchase=100, profi
     :return:
     '''
     spark = SparkSession.builder \
-                 .master("spark://ip-10-0-0-13:7077") \
                  .appName("historical prices") \
                  .config("spark.some.config.option", "some-value") \
                  .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
 
-    bucket_name = "hist-price"
+    bucket_name = bucket_prices
     file_name = "historical_stock_prices.csv"
     df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
     # get the df for targeted stock only
@@ -85,13 +84,11 @@ def strategy_1(target_ticker='AAPL',target_price=200, target_purchase=100, profi
 
     df = df.drop('adj_close', 'volume', 'ma100', 'previous_day', 'month', 'dayofmonth', 'buy' )
     # df.show(10)
-    # ticker, date, price, vol, pnl
 
-    def get_val(row):
-        return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
+    # def get_val(row):
+    #     return (row.ticker, row.purchase_date, row.purchase_price, row.purchase_vol, row.PnL)
 
     for row in df.collect():
-
         write_to_db(row)
 
 

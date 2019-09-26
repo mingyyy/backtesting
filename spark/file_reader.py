@@ -32,14 +32,15 @@ def load_files(from_bucket, to_bucket, app_name):
         StructField("close", StringType(), True),
         StructField("volume", StringType(), True),
     ])
-    df = spark.read.csv("s3a://" + from_bucket + "/SIB_*", header=True)
+    df = spark.read.csv("s3a://" + from_bucket + "/SIC_*", header=True, schema=schema)
+    df.drop('open', 'close', 'volume', 'high', 'low')
 
     # read in all parquet files from this bucket to a single df
     # df = spark.read.parquet("s3a://" + bucket_name + "/*.parquet", header=True)
 
     # write to the same bucket as a single parquet file
-    df.write.parquet("s3a://" + to_bucket + "/simulate_SIB.parquet", mode="overwrite")
+    df.write.parquet("s3a://" + to_bucket + "/simulate_SIC_2col_schema.parquet", mode="overwrite")
 
 
 if __name__ == '__main__':
-    load_files(bucket_large, bucket_parquet,'load all SIB csv file')
+    load_files(bucket_large, bucket_parquet,'load all SIC csv file (drop 5 col)')

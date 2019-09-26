@@ -17,7 +17,7 @@ def write_to_db(records):
     )
     # create a psycopg2 cursor that can execute queries
     cursor = conn.cursor()
-    tbl_name = 'results_all'
+    tbl_name = 'test_sic'
     # create a new table to store results
     cursor.execute('''CREATE TABLE IF NOT EXISTS {}(
                                             id serial PRIMARY KEY,
@@ -64,7 +64,7 @@ def strategy_1_all(bucket_name, file_name, target_amount = 100, mvw=7):
     '''
     spark = SparkSession.builder \
         .master("spark://ip-10-0-0-5:7077") \
-        .appName("Transform SIO") \
+        .appName("Transform SIC parquet") \
         .config("spark.some.config.option", "some-value") \
         .getOrCreate()
 
@@ -118,10 +118,13 @@ def strategy_1_all(bucket_name, file_name, target_amount = 100, mvw=7):
     # df.printSchema()
     df.withColumn('maxN', F.when((df.PnL > 100000000)|(df.purchase_price>100000000)|(df.purchase_vol>100000000), 0)).drop('maxN')
     # Col_names: ticker, last_close, date, price, vol, pnl
-    for row in df.collect():
-        write_to_db(row)
+    tbl_name = 'test_sic'
+    url = 'postgresql://10.0.0.9:5432/'
+    properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver','numpartition': 10000}
+    df.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode='overwrite', properties=properties)
+
 
 
 if __name__ == '__main__':
-    # bucket_parquet contains SIO, SIB
-    strategy_1_all(bucket_parquet, "simulate_G.parquet")
+    # bucket_parquet contains SIO, SIB, SIC
+    strategy_1_all(bucket_parquet, "simulate_SIC.parquet")
