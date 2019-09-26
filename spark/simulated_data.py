@@ -1,86 +1,51 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
-from secrete import db_password, end_point, db_name, db_user_name, bucket_parquet
-import psycopg2
-import sys
+from secrete import db_password, db_user_name, bucket_parquet, bucket_large
+from pyspark.sql.types import StructType, StructField, DateType, StringType, DoubleType, IntegerType
+import sys, time, datetime
 
 
-def write_to_db(records):
-    # use our connection values to establish a connection
-    conn = psycopg2.connect(
-        database=db_name,
-        user=db_user_name,
-        password=db_password,
-        host=end_point,
-        port='5432'
-    )
-    # create a psycopg2 cursor that can execute queries
-    cursor = conn.cursor()
-    tbl_name = 'test_sic'
-    # create a new table to store results
-    cursor.execute('''CREATE TABLE IF NOT EXISTS {}(
-                                            id serial PRIMARY KEY,
-                                            strategy_name VARCHAR(50),
-                                            ticker VARCHAR(6),
-                                            last_price NUMERIC(18,2),
-                                            purchase_date DATE,
-                                            purchase_price NUMERIC(18,2),
-                                            purchase_vol NUMERIC(18,2),
-                                            PnL NUMERIC(18,2)
-                    );'''.format(tbl_name))
-    conn.commit()
 
-    # Convert Unicode to plain Python string: "encode"
-    ticker = records[0]
-    last_price = records[1]
-    purchase_date = records[2]
-    purchase_price = records[3]
-    purchase_vol = records[4]
-    PnL = records[5]
-
-    # cursor.execute('''DELETE FROM  results;''')
-    # conn.commit()
-
-    cursor.execute("INSERT INTO {} (strategy_name, ticker, last_price, purchase_date, purchase_price, purchase_vol, PnL)"
-                   " VALUES ('first_month_ma', '{}', '{}', '{}', {}, {}, {});".format(tbl_name, ticker, last_price, purchase_date, purchase_price, purchase_vol, PnL))
-    cursor.execute("""SELECT * from {} LIMIT 5;""".format(tbl_name))
-    conn.commit()
-
-    # rows = cursor.fetchall()
-    # print(rows)
-
-    cursor.close()
-    conn.close()
-
-
-def strategy_1_all(bucket_name, file_name, target_amount = 100, mvw=7):
+def strategy_1_all(bucket_name, file_name, tbl_name, write_mode, target_amount = 100, mvw=7):
     '''
     A naïve trading approach: buy at the beginning of each month if moving average price is less than previous close,
-    PnL is calculated with the last close and purchase price
+    pnl is calculated with the last close and purchase price
     :param target_amount: the amount purchase each Month
     :param mvw: moving average window
     :return: Output to postgres
     '''
     spark = SparkSession.builder \
         .master("spark://ip-10-0-0-5:7077") \
-        .appName("Transform SIC parquet") \
+        .appName("Transform SIDAAA") \
         .config("spark.some.config.option", "some-value") \
         .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
+    schema = StructType([
+        StructField("date", DateType(), True),
+        StructField("ticker", StringType(), True),
+        StructField("sector", StringType(), True),
+        StructField("adj_close", StringType(), True),
+        StructField("high", StringType(), True),
+        StructField("low", StringType(), True),
+        StructField("open", StringType(), True),
+        StructField("close", StringType(), True),
+        StructField("volume", StringType(), True),
+    ])
     # load parquet file
-    df = spark.read.option("inferSchema", "true").parquet("s3a://" + bucket_name + "/" + file_name)
+    # df = spark.read.option("inferSchema", "true").parquet("s3a://" + bucket_name + "/" + file_name)
 
     # load csv file
-    # bucket_name = bucket_prices
-    # file_name = 'combine_csv_0.csv'
-    # df = spark.read.option("inferSchema", "true").csv("s3a://" + bucket_name + "/" + file_name, header=True)
+    df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True, schema=schema)
 
-    df = df.drop('open', 'close', 'volume', 'high', 'low','sector')
+    # Data cleaing: remove the columns not needed
+    df = df.drop('open', 'close', 'volume', 'high', 'low')
 
+    # Data cleaing: remove the unrealistic prices
     df = df.withColumn("adj_close", df.adj_close.cast("double"))
-    df.withColumn('maxN', F.when((df.adj_close < 0.001) | (df.adj_close > 100000000), 0)).drop('maxN')
+    df = df.withColumn('maxN', F.when((df.adj_close < 0.0001) | (df.adj_close > 10000000), 0).otherwise(1))
+    df = df.filter(df['maxN'] == 1).drop('maxN')
 
     # get the last adj_close price for each ticker in the series
     w = Window.partitionBy(df.ticker).orderBy(df.date).rangeBetween(-sys.maxsize, sys.maxsize)
@@ -112,19 +77,24 @@ def strategy_1_all(bucket_name, file_name, target_amount = 100, mvw=7):
     df = df.withColumn('purchase_vol',
                          F.when(df.ma < df.previous_day, target_amount/df.adj_close))
     df = df.filter(df.purchase_price.isNotNull())
-    df = df.withColumn('PnL', (df.last_close - df.purchase_price) * df.purchase_vol)
+    df = df.withColumn('pnl', (df.last_close - df.purchase_price) * df.purchase_vol)
 
-    df = df.drop('adj_close', 'volume', 'ma', 'previous_day', 'month', 'dayofmonth', 'purchase' )
-    # df.printSchema()
-    df.withColumn('maxN', F.when((df.PnL > 100000000)|(df.purchase_price>100000000)|(df.purchase_vol>100000000), 0)).drop('maxN')
-    # Col_names: ticker, last_close, date, price, vol, pnl
-    tbl_name = 'test_sic'
+    # Data cleaning: remove the unnecessary
+    df = df.drop('adj_close', 'volume', 'ma', 'previous_day', 'month', 'dayofmonth', 'purchase')
+    df = df.withColumn('maxN', F.when((df.pnl > 100000000) | (df.purchase_price > 100000000) | (df.purchase_vol > 100000000), 0).otherwise(1))
+    df = df.filter(df['maxN'] == 1).drop('maxN')
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    df = df.withColumn('create_date', F.unix_timestamp(F.lit(timestamp), 'yyyy-MM-dd HH:mm:ss').cast("timestamp"))
+
+    # Col_names: ticker, last_close, date, sector, purchase_price, purchase_vol, pnl
+    print(df.count())
+
+    # Export to DB
     url = 'postgresql://10.0.0.9:5432/'
-    properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver','numpartition': 10000}
-    df.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode='overwrite', properties=properties)
-
+    properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
+    df.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode=write_mode, properties=properties)
 
 
 if __name__ == '__main__':
     # bucket_parquet contains SIO, SIB, SIC
-    strategy_1_all(bucket_parquet, "simulate_SIC.parquet")
+    strategy_1_all(bucket_large, "SID_1.csv", 'test', 'overwrite')
