@@ -6,8 +6,7 @@ from pyspark.sql.types import StructType, StructField, DateType, StringType, Dou
 import sys, time, datetime
 
 
-
-def strategy_1_all(bucket_name, file_name, tbl_name, write_mode, target_amount = 100, mvw=7):
+def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, target_amount=100, mvw=7):
     '''
     A naïve trading approach: buy at the beginning of each month if moving average price is less than previous close,
     pnl is calculated with the last close and purchase price
@@ -17,8 +16,11 @@ def strategy_1_all(bucket_name, file_name, tbl_name, write_mode, target_amount =
     '''
     spark = SparkSession.builder \
         .master("spark://ip-10-0-0-5:7077") \
-        .appName("Transform SIDAAA") \
-        .config("spark.some.config.option", "some-value") \
+        .appName(app_name) \
+        .config("spark.sql.broadcastTimeout", 36000) \
+        .config('spark.sql.shuffle.partitions', 400)\
+        .config('spark.sql.autoBroadcastJoinThreshold', 20485760 )\
+        .config('spark.sql.files.maxPartitionBytes', 1024*1024*128)\
         .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
@@ -46,11 +48,13 @@ def strategy_1_all(bucket_name, file_name, tbl_name, write_mode, target_amount =
     df = df.withColumn("adj_close", df.adj_close.cast("double"))
     df = df.withColumn('maxN', F.when((df.adj_close < 0.0001) | (df.adj_close > 10000000), 0).otherwise(1))
     df = df.filter(df['maxN'] == 1).drop('maxN')
+    # print(df.count())
 
     # get the last adj_close price for each ticker in the series
     w = Window.partitionBy(df.ticker).orderBy(df.date).rangeBetween(-sys.maxsize, sys.maxsize)
     new_df = df.select(df.ticker,F.max(df.date).over(w).alias('max_date')).dropDuplicates()
     new_df = new_df.withColumnRenamed('max_date', 'date')
+    # print(new_df.count())
     new_df = F.broadcast(new_df).join(df, ['ticker', 'date'], 'inner').select('ticker', 'adj_close')
     new_df = new_df.withColumnRenamed('adj_close', 'last_close')
     # Use the last price as the sell_price
@@ -85,16 +89,19 @@ def strategy_1_all(bucket_name, file_name, tbl_name, write_mode, target_amount =
     df = df.filter(df['maxN'] == 1).drop('maxN')
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     df = df.withColumn('create_date', F.unix_timestamp(F.lit(timestamp), 'yyyy-MM-dd HH:mm:ss').cast("timestamp"))
-
+    df = df.withColumnRenamed('date', 'purchase_date')
     # Col_names: ticker, last_close, date, sector, purchase_price, purchase_vol, pnl
-    print(df.count())
-
+    # df = df.coalesce(50)
     # Export to DB
+
+    df = df.select('ticker','sector','purchase_date','purchase_price','purchase_vol','last_close','pnl','create_date')
+
     url = 'postgresql://10.0.0.9:5432/'
     properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
+
     df.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode=write_mode, properties=properties)
 
 
 if __name__ == '__main__':
     # bucket_parquet contains SIO, SIB, SIC
-    strategy_1_all(bucket_large, "SID_1.csv", 'test', 'overwrite')
+    strategy_1_all('transform SIB parquet to db', bucket_parquet, "simulate_SIB.parquet", 'tbl_sib', 'overwrite')
