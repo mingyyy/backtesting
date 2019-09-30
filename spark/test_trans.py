@@ -41,7 +41,8 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
 
     # load files
     if file_name.split('.')[1] == 'parquet':
-        df = spark.read.parquet("s3a://" + bucket_name + "/" + file_name)
+    # .option("inferSchema", "true")
+        df = spark.read.option("inferSchema", "true").parquet("s3a://" + bucket_name + "/" + file_name)
     elif file_name.split('.')[1] == 'csv':
         df = spark.read.csv("s3a://" + bucket_name + "/" + file_name, header=True)
 
@@ -52,6 +53,7 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
     df = df.withColumn("adj_close", df.adj_close.cast("double"))
     df = df.withColumn('maxN', F.when((df.adj_close < 0.1) | (df.adj_close > 1000), 0).otherwise(1))
     df = df.filter(df['maxN'] == 1).drop('maxN')
+
 
     # df.persist()
 
@@ -101,6 +103,9 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     df = df.withColumn('create_date', F.unix_timestamp(F.lit(timestamp), 'yyyy-MM-dd HH:mm:ss').cast("timestamp"))
     df = df.withColumnRenamed('date', 'purchase_date')
+    df = df.withColumn("purchase_date", df['purchase_date'].cast(DateType()))
+
+    df = df.sample(withReplacement=False, fraction=0.01)
 
     url = 'postgresql://10.0.0.9:5432/'
     properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
@@ -113,4 +118,6 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
 
 if __name__ == '__main__':
     # bucket_parquet contains
-    strategy_1_all('testing flow using SIL parquet to DB -0.1-1000, 930', bucket_parquet, "simulate_SIL.parquet", 'test','append')
+    strategy_1_all('sampling 1% using SIB parquet to DB -0.1-1000, 470', bucket_parquet, "simulate_SIB.parquet", 'sample','append')
+    #strategy_1_all('testing flow using SIC parquet to DB -0.1-1000, 470', bucket_parquet, "simulate_SIC.parquet", 'test','append')
+    #strategy_1_all('testing flow using SIO parquet to DB -0.1-1000, 470', bucket_parquet, "simulate_SIO.parquet", 'test','append')

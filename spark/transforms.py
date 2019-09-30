@@ -128,7 +128,7 @@ def strategy_1_all(target_amount = 100, mvw=7):
     df = df.drop('adj_close', 'volume', 'ma', 'previous_day', 'month', 'dayofmonth', 'purchase' )
 
     df.printSchema()
-    df.withColumn('maxN', F.when((df.PnL > 100000000)|(df.purchase_price>100000000)|(df.purchase_vol>100000000), 0)).drop('maxN')
+    df.withColumn('maxN', F.when((df.PnL > 100000000)|(df.purchase_price > 100000000)|(df.purchase_vol > 100000000), 0)).drop('maxN')
     # ticker, last_close, date, price, vol, pnl
 
     # def f(x): print(x)
