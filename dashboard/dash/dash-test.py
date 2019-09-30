@@ -53,7 +53,7 @@ def load_data(query):
     return df_price
 
 # Step 1. Load Data from Postgres
-query = "SELECT sector, ticker, purchase_date ,purchase_price FROM {} WHERE ticker='SIBBHM' ORDER BY purchase_date;".format(tbl_name)
+query = "SELECT sector, ticker, purchase_date ,purchase_price FROM {} ORDER BY purchase_date;".format(tbl_name)
 df_price = load_data(query)
 
 # Step 2. Define Range Slider options
@@ -85,7 +85,6 @@ ticker_list = load_data(q)['ticker']
 opts = [{'label': 'stock ' + i, 'value': i} for i in ticker_list]
 
 
-
 # Step 4. Create a Dash layout
 app.layout = html.Div(
     children=[
@@ -112,6 +111,7 @@ app.layout = html.Div(
                                  )
                 ], style={'width': '300px',
                         'fontSize': '15px',
+                        'padding-top': '10px',
                         'padding-left': '30px',
                         'display': 'inline-block'}),
 
@@ -125,8 +125,8 @@ app.layout = html.Div(
         #                  multi = True
 
         #                  )
-        # ], style={'width': '200px',
-        #           'fontSize': '20px',
+        # ], style={'width': '300px',
+        #           'fontSize': '15px',
         #           'padding-left': '30px',
         #           'display': 'inline-block'}),
 
@@ -158,12 +158,12 @@ app.layout = html.Div(
 @app.callback(Output('output-graph', 'figure'),
              [Input('opt', 'value'), Input('slider', 'value')])
 def update_figure(input1, input2):
-    selected_ticker = input1[0]
-    print(selected_ticker)
 
-    query = "SELECT purchase_date FROM {} WHERE TICKER='{}' ORDER BY purchase_date;".format(tbl_name, selected_ticker)
+    selected_ticker = input1
+
+    query = "SELECT purchase_date FROM {} ORDER BY purchase_date;".format(tbl_name)
     dates = load_data(query)
-    print(dates.iloc[input2[0]][0], dates.iloc[input2[1]][0])
+    print(dates['purchase_date'])
 
     # filtering the data
 
@@ -176,7 +176,7 @@ def update_figure(input1, input2):
                                     color='rgb(229, 151, 50)',),
                          mode = 'markers')
 
-    trace_2 = go.Scatter(x = st2.purchase_date, y =selected_ticker,
+    trace_2 = go.Scatter(x = st2.purchase_date, y =[selected_ticker],
                         name = input1,
                         line = dict(width=1,
                                     color='rgb(106, 181, 135)',),
