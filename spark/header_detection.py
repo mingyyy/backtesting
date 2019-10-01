@@ -1,12 +1,10 @@
 from pyspark.sql import SparkSession
-from secrete import bucket_simulation, bucket_parquet, bucket_prices, bucket_large, bucket_larger, db_user_name, db_password
-from pyspark.sql.types import StructType, StructField, \
-    DateType, StringType, DoubleType, IntegerType,FloatType, NumericType, LongType, ShortType, \
-    TimestampType, ArrayType, BinaryType, BooleanType, DecimalType
+from secrete import *
+from pyspark.sql.types import *
 import pyspark.sql.functions as F
 from pyspark.sql.window import Window
 import subprocess
-import datetime
+import datetime, time
 import operator
 from create_table import connect_DB
 
@@ -17,7 +15,7 @@ def quiet_logs(spark):
   logger.LogManager.getLogger("akka").setLevel(logger.Level.ERROR)
 
 
-def load_files(from_bucket, app_name, file_name):
+def csv_to_tbl(from_bucket, app_name, file_name):
     spark = SparkSession.builder \
         .appName(app_name) \
         .config('spark.sql.files.maxPartitionBytes', 1024 * 1024 * 128) \
@@ -32,15 +30,34 @@ def load_files(from_bucket, app_name, file_name):
     # fieldnames = [f.name for f in df.schema.fields]
     # fieldnames = ['date', 'ticker', 'sector', 'adj_close', 'high', 'low', 'open', 'close', 'volume']
 
-    tbl_name = 'TBL_SCHEMA_' + file_name.replace(' ','_').split('.')[0]
-    connect_DB(tbl_name, get_suggested(df))
+    df=get_schema(spark, get_suggested_dict(df), file_name)
+    tbl_name = 'tbl_schema'
+    # tbl_name = 'Tbl_' + file_name.replace(' ', '_').split('.')[0]
+    # connect_DB(tbl_name, get_suggested(df))
 
     url = 'postgresql://10.0.0.9:5432/'
     properties = {'user': db_user_name, 'password': db_password, 'driver': 'org.postgresql.Driver'}
     df.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode='overwrite', properties=properties)
 
 
-def get_suggested(df):
+def get_schema(spark, dict, file_name):
+    '''
+    :param spark: entry point
+    :param dict: dictionary of ticker and type
+    :return:
+    '''
+    l=[]
+    for name, type in dict.items():
+        t = (file_name, name, type, type, 'admin001' )
+        l.append(t)
+    df = spark.createDataFrame(l, ['file_name','col_name','col_type_suggest', 'col_type_final', 'user_id'])
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    df = df.withColumn('create_date', F.unix_timestamp(F.lit(timestamp), 'yyyy-MM-dd HH:mm:ss').cast("timestamp"))
+    return df
+
+
+
+def get_suggested_dict(df):
     '''
     :param df: data frame
     :return: dictionary of suggested types in Postgres
@@ -49,25 +66,26 @@ def get_suggested(df):
     # first_n = df.limit(n).toPandas().to_dict(orient='list')
     original = {}
     suggested = {}
+
     for f in df.schema.fields:
         original[f.name] = f.dataType
-        if f.dataType == DateType:
+        if isinstance(f.dataType, DateType) is True:
             suggested[f.name] = 'date'
-        elif f.dataType == StringType:
+        elif isinstance(f.dataType, StringType) is True:
             df = df.withColumn('length', F.length(F.col(f.name)))
             x = df.agg(F.max(df.length)).collect()[0][0]
-            suggested[f.name] = 'varchar({})'.format(x)
-        elif f.dataType == DoubleType or f.dataType == DecimalType or f.dataType == NumericType:
+            suggested[f.name] = 'varchar({})'.format(int(x*1.2))
+        elif isinstance(f.dataType, DoubleType) is True or isinstance(f.dataType, DecimalType) is True or isinstance(f.dataType, NumericType) is True:
             suggested[f.name] = 'numeric(18,2)'
-        elif f.dataType == LongType:
+        elif isinstance(f.dataType, LongType) is True:
             suggested[f.name] = 'float4'
-        elif f.dataType == FloatType:
+        elif isinstance(f.dataType, FloatType) is True:
             suggested[f.name] = 'float8'
-        elif f.dataType == ShortType:
+        elif isinstance(f.dataType, ShortType) is True:
             suggested[f.name] = 'integer'
-        elif f.dataType == BooleanType:
+        elif isinstance(f.dataType, BooleanType) is True:
             suggested[f.name] = 'Bool'
-        elif f.dataType == TimestampType:
+        elif isinstance(f.dataType, TimestampType) is True:
             suggested[f.name] = 'timestamp'
     return suggested
 
@@ -150,5 +168,5 @@ def is_number_tryexcept(s):
 
 
 if __name__ == '__main__':
-    s = load_files(bucket_prices, 'test schema search using historcial prices', 'historical_stocks.csv')
-    print(s)
+    csv_to_tbl(bucket_prices, 'test schema search using historcial prices', 'historical_stocks.csv')
+

@@ -15,12 +15,10 @@ def connect_DB(tbl, dict):
     cursor = conn.cursor()
 
     create_tbl(cursor, conn, tbl, dict)
-    cursor.execute("SELECT * from {};".format(tbl))
-    conn.commit()
-
-    rows = cursor.fetchall()
-    print(rows)
-
+    # cursor.execute("SELECT * from {};".format(tbl))
+    # conn.commit()
+    # rows = cursor.fetchall()
+    # print(rows)
     cursor.close()
     conn.close()
 
@@ -37,7 +35,7 @@ def create_tbl(cursor, conn, tbl, dict):
         str += k + ' ' + v + ', '
     str= str[:-2]
 
-    #create a new table to store the results
+    #create a new table to store the field type suggestions
     cursor.execute('CREATE TABLE {} (ID SERIAL PRIMARY KEY, {});'.format(tbl, str))
     conn.commit()
 
