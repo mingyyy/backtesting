@@ -14,6 +14,7 @@ def connect_DB(tbl, dict):
     # create a psycopg2 cursor that can execute queries
     cursor = conn.cursor()
 
+    create_tbl(cursor, conn, tbl, dict)
     cursor.execute("SELECT * from {};".format(tbl))
     conn.commit()
 
