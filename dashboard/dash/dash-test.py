@@ -214,7 +214,7 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
     # handle edge case: when no sector chosen
     if len(selected_sector) == 0:
         query = "SELECT ticker, purchase_date, {} FROM {} GROUP BY ticker, purchase_date, {} HAVING ticker = '{}' ORDER BY purchase_date;"\
-            .format(selected_col, tbl_name, selected_col, first_ticker)
+            .format(selected_col, tbl_name, selected_col, selected_ticker)
     else:
         query = "SELECT ticker, purchase_date, {} FROM {} WHERE sector in ({}) AND ticker = '{}' ORDER BY purchase_date;"\
             .format(selected_col, tbl_name, str, selected_ticker)
@@ -226,7 +226,6 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
 
     # filtering the data
     st2 = df_update[(df_update.purchase_date > start) & (df_update.purchase_date < end)]
-
     # updating the plot
     trace_1 = go.Scatter(x=st2.purchase_date, y=st2[selected_col],
                         name=selected_ticker,
