@@ -31,9 +31,9 @@ external_scripts = [
 
 # external CSS stylesheets
 external_stylesheets = [
-    'https://codepen.io/chriddyp/pen/bWLwgP.css',
+    'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css',
     {
-        'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css',
+        'href': 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css',
         'rel': 'stylesheet',
         'integrity': 'sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO',
         'crossorigin': 'anonymous'
@@ -44,95 +44,125 @@ app = dash.Dash(external_scripts=external_scripts,
                 external_stylesheets=external_stylesheets)
 tbl_string = "postgresql+psycopg2://postgres:{}@ec2-3-229-236-236.compute-1.amazonaws.com:5432/test".format(db_password)
 tbl_name = "sample"
+selected_col='purchase_price'
 
 
 def load_data(query):
     conn= psycopg2.connect(host='ec2-3-229-236-236.compute-1.amazonaws.com', user='postgres', password=db_password)
     sql_command = (query)
-    df_price = pd.read_sql(sql_command, conn)
-    return df_price
+    df = pd.read_sql(sql_command, conn)
+    return df
 
-# Step 1. Load Data from Postgres
-query = "SELECT sector, ticker, purchase_date ,purchase_price FROM {} ORDER BY purchase_date;".format(tbl_name)
-df_price = load_data(query)
 
-# Step 2. Define Range Slider options
-query = "SELECT purchase_date FROM {} group by purchase_date ORDER BY purchase_date;".format(tbl_name)
-dates = load_data(query)
-start_date = dates['purchase_date'].min()
-end_date = dates['purchase_date'].max()
+def get_sector(tbl_name):
+    q = "SELECT sector FROM {} GROUP BY sector;".format(tbl_name)
+    sector_list = load_data(q)['sector']
+    opts_sector = [{'label': i, 'value': i} for i in sector_list]
+    return opts_sector
 
-N = int(dates.count()[0])
-date_list = dates['purchase_date'].tolist()
-step = int(N/18)
-date_mark = {i: {'label': dates.iloc[i][0].strftime('%Y-%m'), 'style': {'transform': 'rotate(-60deg)'}}
-             for i in range(0, N+step, step) if i <= N}
+
+def get_stock(tbl_name, sector):
+    if len(sector) == 0:
+        q = "SELECT ticker FROM {} GROUP BY ticker;".format(tbl_name)
+    else:
+        q = "SELECT ticker FROM {} GROUP BY sector, ticker HAVING sector IN ({});".format(tbl_name, sector)
+    ticker_list = load_data(q)['ticker']
+    opts = [{'label':  i, 'value': i} for i in ticker_list]
+    return opts
+
+
+# Define dropdown list.
+opts_sector = get_sector(tbl_name)
+first_sector = opts_sector[0]['value']
+opts_ticker = get_stock(tbl_name, "'" + first_sector + "'")
+first_ticker = opts_ticker[0]['value']
+
+
+# Load Data from Postgres for x, y
+q = "SELECT purchase_date, {} FROM {} WHERE ticker='{}' ORDER BY purchase_date;".format(selected_col, tbl_name, first_ticker)
+df_init = load_data(q)
+
+
+# Define Range Slider options
+q = "SELECT purchase_date FROM {} GROUP BY ticker, purchase_date HAVING ticker='{}' ORDER BY purchase_date;".format(tbl_name, first_ticker)
+first_dates = load_data(q)
+start_date = first_dates['purchase_date'].min()
+end_date = first_dates['purchase_date'].max()
+
+# define the number of marker for display
+N = int(first_dates.count()[0])
+M = 1
+if N > 12:
+    while int(N/M)>12:
+        M += 1
+else:
+    M = N
+date_list = first_dates['purchase_date'].tolist()
+step = int(N/M)
+date_mark = {i: {'label': first_dates.iloc[i][0].strftime('%Y-%m'), 'style': {'transform': 'rotate(-60deg)'}}
+             for i in range(0, N+step, step) if i < N}
 
 # Initiate Graph
-trace_1 = go.Scatter(x=df_price.purchase_date, y=df_price['purchase_price'],
-                    name='Purchase Price',
-                    line=dict(width=2,
-                                color='rgb(229, 151, 50)'),
-                     mode='markers')
-layout = go.Layout(title='Time Series Plot',
-                   hovermode='closest')
+trace_1 = go.Scatter(x=df_init.purchase_date, y=df_init[selected_col],name=selected_col,
+                    line=dict(width=2, color='rgb(229, 151, 50)'),mode='markers')
+layout = go.Layout(title='Time Series Plot', hovermode='closest')
 fig = go.Figure(data=[trace_1], layout=layout)
 
-# Step 3. Define dropdown list.
-q = "SELECT sector, ticker FROM {} group by sector, ticker limit 10;".format(tbl_name)
-ticker_list = load_data(q)['ticker']
 
-opts = [{'label': 'stock ' + i, 'value': i} for i in ticker_list]
-
-
-# Step 4. Create a Dash layout
-app.layout = html.Div(
-    children=[
-        # Header and some styles
+# Create a Dash layout
+app.layout = html.Div([
+        # Header
         html.Div([
             html.H1("Trading Strategy Back Testing Dashboard"),
-            html.P("MVP testing version 1.1"),],
-            style={'padding': '20px',
+            html.H5("MVP testing version 1.1"),],
+            style={'padding-left': '200px',
+                   'padding-bottom':'20px',
+                   'padding-top':'20px',
                    'backgroundColor': '#74F3FF'
                     }),
 
-        # Input field
-        # html.Div(children='''
-        # Symbol to graph:'''),
-        # dcc.Input(id='input', value='', type='text'),
+        # Dropdowns
+        html.Div([
+            # Sector
+            html.Div(
+            [
+                html.H5('Select sectors'),
+                #html.Label("Want to see have less ticker"),
+                dcc.Dropdown(id='opt_sector',
+                             options=opts_sector,
+                             value=first_sector,
+                             placeholder="Select Sectors",
+                             multi=True
+                             ),
+            ], style={'width': '30%',
+                      'fontSize': '15px',
+                      'padding-top': '10px',
+                      'padding-left': '30px',
+                      'display': 'inline-block'}),
 
-        # Dropdown 1
-        html.P([
+            # Ticker based on Sector
+            html.Div(
+                [   html.H5('Select a ticker'),
                     # html.Label("Choose a Ticker"),
-                    dcc.Dropdown(id='opt',
-                                 options=opts,
-                                 value=opts[0]['value'],
-                                placeholder="Select a ticker",
+                    dcc.Dropdown(id='opt_ticker',
+                                 options=opts_ticker,
+                                 value=first_ticker,
+                                 placeholder="Choose a ticker",
                                  )
-                ], style={'width': '300px',
-                        'fontSize': '15px',
-                        'padding-top': '10px',
-                        'padding-left': '30px',
-                        'display': 'inline-block'}),
+                ], style={'width': '30%',
+                          'fontSize': '15px',
+                          'padding-top': '10px',
+                          'padding-left': '30px',
+                          'display': 'inline-block'}),
+        ],
+            style={
+            'borderBottom': 'thin lightgrey solid',
+            'backgroundColor': 'rgb(250, 250, 250)',
+            'padding': '10px 5px'
+            }
+        ),
 
-        # Dropdown 2
-        # html.P([
-        #     html.Label("Want to have less ticker"),
-        #     dcc.Dropdown(id='opt_sector',
-        #                  options=opts,
-        #                  value=[opts[0], opts[1]],
-        #                  placeholder="Select a Sector",
-        #                  multi = True
-
-        #                  )
-        # ], style={'width': '300px',
-        #           'fontSize': '15px',
-        #           'padding-left': '30px',
-        #           'display': 'inline-block'}),
-
-
-
-        # Add a plot
+        # Plot
         dcc.Graph(id='output-graph', figure=fig),
 
         # Range slider
@@ -141,50 +171,77 @@ app.layout = html.Div(
             dcc.RangeSlider(id='slider',
                             marks=date_mark,
                             min=0,
-                            max=N,
-                            value=[1, N-1])
-        ], style={'width': '80%',
-                  'fontSize': '20px',
-                  'padding-left': '100px',
-                  'display': 'inline-block',
-                  # 'transform': 'rotate(-60deg)',
-                  })
-    ]
-)
+                            max=N+step,
+                            value=[1, N+step]
+                            )
+                ], style={'width': '80%',
+                          'fontSize': '20px',
+                          'padding-left': '100px',
+                          'display': 'inline-block',
+                          })
+    ])
 
 
+@app.callback(Output('opt_ticker','options'), [Input('opt_sector', 'value')])
+def update_ticker_options(selected_sector):
+    #selected_sector could be list or str, get the right input for sector selection
+    str = ''
+    if type(selected_sector) is list:
+        for i in selected_sector:
+            str +=  " '" + i + "', "
+        str = str[:-2]
+    else:
+        str = " '" + selected_sector + "' "
+    opts_ticker = get_stock(tbl_name, str)
 
-# Step 4. Add callback functions to render the page
+    return opts_ticker
+
+
 @app.callback(Output('output-graph', 'figure'),
-             [Input('opt', 'value'), Input('slider', 'value')])
-def update_figure(input1, input2):
+             [Input('opt_sector', 'value'),
+              Input('opt_ticker', 'value'),
+              Input('slider', 'value')])
+def update_figure(selected_sector, selected_ticker, selected_dates):
+    # selected_sector could be list or str, get the right input for sector selection
+    str = ''
+    if type(selected_sector) is list:
+        for i in selected_sector:
+            str += " '" + i + "', "
+        str = str[:-2]
+    else:
+        str = " '" + selected_sector + "' "
 
-    selected_ticker = input1
+    # handle edge case: when no sector chosen
+    if len(selected_sector) == 0:
+        query = "SELECT ticker, purchase_date, {} FROM {} GROUP BY ticker, purchase_date, {} HAVING ticker = '{}' ORDER BY purchase_date;"\
+            .format(selected_col, tbl_name, selected_col, first_ticker)
+    else:
+        query = "SELECT ticker, purchase_date, {} FROM {} WHERE sector in ({}) AND ticker = '{}' ORDER BY purchase_date;"\
+            .format(selected_col, tbl_name, str, selected_ticker)
+    df_update = load_data(query)
 
-    query = "SELECT purchase_date FROM {} ORDER BY purchase_date;".format(tbl_name)
-    dates = load_data(query)
-    print(dates['purchase_date'])
+    # get the dates
+    start = first_dates.iloc[selected_dates[0]][0]
+    end = first_dates.iloc[min(selected_dates[1]-1, N-1)][0]
 
     # filtering the data
-
-    st2 = df_price[(df_price.purchase_date > dates.iloc[input2[0]][0]) & (df_price.purchase_date < dates.iloc[input2[1]][0])]
+    st2 = df_update[(df_update.purchase_date > start) & (df_update.purchase_date < end)]
 
     # updating the plot
-    trace_1 = go.Scatter(x=st2.purchase_date, y=st2['purchase_price'],
-                        name='Stock purchase',
-                        line = dict(width=1,
-                                    color='rgb(229, 151, 50)',),
-                         mode = 'markers')
+    trace_1 = go.Scatter(x=st2.purchase_date, y=st2[selected_col],
+                        name=selected_ticker,
+                        line=dict(width=1,color='rgb(229, 151, 50)',),
+                         mode='markers')
 
-    trace_2 = go.Scatter(x = st2.purchase_date, y =[selected_ticker],
-                        name = input1,
-                        line = dict(width=1,
-                                    color='rgb(106, 181, 135)',),
-                        mode='markers'
-                        )
-    fig = go.Figure(data=[trace_1, trace_2], layout=layout)
+    # trace_2 = go.Scatter(x = st2.purchase_date, y =[selected_ticker],
+    #                     name = input1,
+    #                     line = dict(width=1,
+    #                                 color='rgb(106, 181, 135)',),
+    #                     mode='markers'
+    #                     )
+    # fig = go.Figure(data=[trace_1, trace_2], layout=layout)
+    fig = go.Figure(data=[trace_1], layout=layout)
     return fig
-
 
 
 def upload_file_to_s3(file, bucket_name, acl="public-read"):
@@ -206,7 +263,6 @@ def upload_file_to_s3(file, bucket_name, acl="public-read"):
         return e
 
     return "{}{}".format('http://{}.s3.amazonaws.com/'.format(S3_BUCKET), file.filename)
-
 
 
 if __name__ == '__main__':
