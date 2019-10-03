@@ -1,12 +1,12 @@
-# BackTesting
+# Back In Time
 
 ## Table of Contents
 
-1. [Overview] (#overview)
-2. [Project Ideas] (#project-ideas)
-3. []
+1. [Motivation] (#overview)
+2. [Overview] (#project-ideas)
+3. [Structure]
 
-## Overview
+## Motivation
 
 In this document, I will outline the components of the project based on different ideas.
 For each idea the structure will be:
@@ -15,10 +15,23 @@ For each idea the structure will be:
 3. Stack?
 
 
-## Projects
+## Overview
 
-### Project Idea 1
-#### What's the problem?
+
+### Pipeline
+
+### Simulation
+
+### Conversion
+
+### Transformation
+
+### Database
+
+### Visualization
+
+### Future
+
 
 When I was a risk manager in a private bank, I need to do stress test a few times a year for regulatory reasons,
 and back testing to the methodology behind our multiple asset class collateral system. 
@@ -30,8 +43,6 @@ With back testing, I need the historical data for certain period which was store
 retrieved and restored in a separate environment. The whole process takes a few days. Once, I finish with the task,
 the resource is release and reassigned to other people. So the question is: would it be possible to get it cheaper and faster?
  
-
-#### How can we solve this problem?
 
 With readily available "Daily Historical Stock Prices (1970 - 2018)" -Historical stock prices for several thousand unique stock tickers (2G DATA) 
 I could simulate some portfolios with different holdings. 
@@ -133,3 +144,4 @@ Ubuntu 16.04 images.
         starting org.apache.spark.deploy.history.HistoryServer, logging to /usr/local/spark/logs/spark-root-org.apache.spark.deploy.history.HistoryServer-1-ip-10-0-0-6.out
         ```
     - And now WebUI with port 18080 should work
+4. 
