@@ -45,15 +45,9 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
     # Data cleaing: remove the columns not needed
     df = df.drop('open', 'close', 'volume', 'high', 'low')
 
-    # Data cleaing: remove the unrealistic prices
-    df = df.withColumn("adj_close", df.adj_close.cast("double"))
-
-    # function to calculate number of seconds from number of days
-    w = Window.partitionBy(df.ticker).orderBy(df.date).rowsBetween(-mvw, 0)
-
-    # find the moving average price mvw days
-    df = df.withColumn("ma", F.avg(df.adj_close).over(w))
-    df.show(10)
+    df = df.withColumn('length', F.length(F.col('sector')))
+    x=df.agg(F.max(df.length)).collect()[0][0]
+    print(x)
 
 
 

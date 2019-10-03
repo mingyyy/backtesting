@@ -31,10 +31,10 @@ def convert_files(from_bucket, from_file, to_bucket, to_file, app_name):
 def get_history(app_id):
     path = 'http://{}:18080/api/v1/applications/'.format(host)
     if check_jobs(path, app_id,'jobs') == 'ok':
-        sms = 'All jobs succeeded!'
+        sms = 'Congrats! All jobs succeeded!'
         print(sms)
     else:
-        print('Ohh, sorry! Something went wrong, please check the useful info below:')
+        print('Ohh, sorry! Something went wrong, please check the logs.')
         save_to_bucket(check_stages(path, app_id, 'stages'), "log_"+app_id)
 
 

@@ -33,7 +33,7 @@ def create_tbl(cursor, conn, tbl, dict):
     str = ''
     for k, v in dict.items():
         str += k + ' ' + v + ', '
-    str= str[:-2]
+    str = str[:-2]
 
     #create a new table to store the field type suggestions
     cursor.execute('CREATE TABLE {} (ID SERIAL PRIMARY KEY, {});'.format(tbl, str))
@@ -43,4 +43,5 @@ def create_tbl(cursor, conn, tbl, dict):
 
 
 if __name__ == '__main__':
+    # testing table creation
     connect_DB('TBL_SCHEMA', {'FILE_NAME': 'VARCHAR(100)','COL_NAME':'VARCHAR(100)','COL_TYPE_SUGGEST': 'VARCHAR(20)','COL_TYPE_FINAL': 'VARCHAR(20)','USER_ID': 'VARCHAR(10)','CREATE_DATE': 'TIMESTAMP'})

@@ -1,8 +1,6 @@
 
 import sys
 print(sys.path)
-
-
 from pyspark.sql import SparkSession
 from secrete import *
 from pyspark.sql.types import *
@@ -49,17 +47,6 @@ def csv_to_tbl(from_bucket, app_name, file_name):
     print(app_id)
     get_history(app_id)
 
-    # if check_jobs(app_id,'jobs') == 'ok':
-    #     sms = 'All jobs succeeded!'
-    #     print(sms)
-    # else:
-    #     print('Ohh, sorry! Something went wrong, please check the useful info below:')
-    #     # save_to_bucket(check_stages(app_id, 'stages'), "log"+str(app_id))
-    #     sms = check_stages(app_id, 'stages')
-    # df_sms = spark.sparkContext.parallelize(sms).toDF("message")
-    # df_sms = df_sms.withColumn('app_id', app_id)
-    # tbl_name = 'tbl_sms'
-    # df_sms.write.jdbc(url='jdbc:%s' % url, table=tbl_name, mode='append', properties=properties)
 
 
 def get_history(app_id):

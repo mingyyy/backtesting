@@ -86,7 +86,6 @@ def strategy_1_all(app_name, bucket_name, file_name, tbl_name, write_mode, targe
     # condition1: only buy at first day of the month
     df = df.join(F.broadcast(df_d), 'date', 'inner')
 
-
     # condition2: moving avg is less than previous day close price
     df = df.withColumn('purchase_price', F.when(df.ma < df.previous_day, df.adj_close))
     df = df.withColumn('purchase_vol',
