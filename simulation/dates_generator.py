@@ -29,7 +29,7 @@ def create_dates(start='1970-01-05', end='2018-12-20'):
 
 
 def create_bucket_name(bucket_prefix):
-    # The bucket name must be (3,63) char long
+    # The bucket name must be (3,63) char long and must be unqiue
     return ''.join([bucket_prefix, str(uuid.uuid4())])
 
 

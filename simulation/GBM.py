@@ -10,7 +10,7 @@ def GBM(S_0, t, mu, sigma, delta=1/252):
     diffusion = sigma * np.random.normal(loc=0, scale=sqrt(delta), size=(t,))
     S = np.exp(drift * delta + diffusion)
     # Geometric Brownian Motion
-    S = S_0*S.cumprod() # GBM
+    S = S_0*S.cumprod()
     return S
 
 
@@ -23,10 +23,11 @@ if __name__ == "__main__":
     T = 252*3
     # initial stock price
     S_0 = 100
-    delta = 1 / T  # time increments
+    # time increments
+    delta = 1 / T
 
     x = pd.DataFrame()
-    for i in range(1,13):
+    for i in range(1,10):
         np.random.seed(i)
         y = GBM(S_0, T, mu, sigma, delta)
         plt.plot(y)
