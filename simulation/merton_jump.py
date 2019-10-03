@@ -5,6 +5,12 @@ import numpy.random as nrand
 import matplotlib.pyplot as plt
 import pandas as pd
 
+''' 
+Disclaimer:
+    Based on this Jupyter Note book  from Stuart Reid
+    https://nbviewer.jupyter.org/github/StuartGordonReid/Python-Notebooks/blob/master/Stochastic%20Process%20Algorithms.ipynb
+'''
+
 
 class ModelParameters:
     """
