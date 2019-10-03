@@ -43,7 +43,7 @@ external_stylesheets = [
 app = dash.Dash(external_scripts=external_scripts,
                 external_stylesheets=external_stylesheets)
 tbl_string = "postgresql+psycopg2://postgres:{}@ec2-3-229-236-236.compute-1.amazonaws.com:5432/test".format(db_password)
-tbl_name = "sample"
+tbl_name = "test2"
 selected_col='purchase_price'
 
 
