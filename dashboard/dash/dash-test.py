@@ -105,7 +105,7 @@ date_mark = {i: {'label': first_dates.iloc[i][0].strftime('%Y-%m'), 'style': {'t
 # Initiate Graph
 trace_1 = go.Scatter(x=df_init.purchase_date, y=df_init[selected_col],name=selected_col,
                     line=dict(width=2, color='rgb(229, 151, 50)'),mode='markers')
-layout = go.Layout(title='Time Series Plot', hovermode='closest')
+layout = go.Layout(title='Purchase Price Plot', hovermode='closest')
 fig = go.Figure(data=[trace_1], layout=layout)
 
 
