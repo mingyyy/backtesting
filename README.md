@@ -5,6 +5,13 @@
 1. [Motivation](#motivation)
 2. [Overview](#overview)
 3. [Pipeline](#pipeline)
+4. [Dataset](#dataset)
+5. [Conversion](#conversionn)
+6. [Transformation](#transformation)
+7. [Database](#database)
+8. [Visualization](#visualization)
+9. [Vision](#vision)
+10. [Notes](#notes-on-setting-the-environment)
 
 ## Motivation
 In my previous jobs, I have seen the same problems with data management over and over again, 
@@ -112,9 +119,9 @@ Multiple choice dropdown of sectors which determines the tickers' dropdown list.
 Rangeslider for the time period.
 ![UI_final](static/UI_final.png)
 
-### Further Development
+### Vision
 
-Plan for possible product.
+Plan for futher development.
 ![overview](static/overview.png)
 
 
