@@ -146,3 +146,12 @@ Ubuntu 16.04 images.
         ```
     - And now WebUI with port 18080 should work
 4. Configure for connecting to Postgres Database, in this case M4.Large EC2 instance, 16.04 Ubuntu image.
+
+5. Run Spark
+```
+export PYSPARK_PYTHON=python3;
+export SPARK_CLASSPATH= <path to downloaded jar>/postgresql-42.2.8.jar
+
+pyspark
+spark-submit --driver-class-path <path to downloaded jar>/postgresql-42.2.8.jar  <file_name>.py
+```
