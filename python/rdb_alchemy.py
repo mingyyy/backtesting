@@ -32,9 +32,9 @@ with db.connect() as conn:
         print(r)
 
     # Update
-    # update_statement = res_table.update().where(res_table.c.year=="2016").values(title = "Some2016Film")
-    # conn.execute(update_statement)
-    #
-    # # Delete
-    # delete_statement = res_table.delete().where(res_table.c.year == "2016")
-    # conn.execute(delete_statement)
+    update_statement = res_table.update().where(res_table.c.year=="2016").values(title = "Some2016Film")
+    conn.execute(update_statement)
+
+    # Delete
+    delete_statement = res_table.delete().where(res_table.c.year == "2016")
+    conn.execute(delete_statement)

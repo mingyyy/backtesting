@@ -4,16 +4,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import plotly.graph_objs as go
-from secrete import db_password, S3_KEY, S3_SECRET
+from secrete import db_password
 import psycopg2
-import boto3
 
-
-s3 = boto3.client(
-   "s3",
-   aws_access_key_id=S3_KEY,
-   aws_secret_access_key=S3_SECRET
-)
 
 # external JavaScript files
 external_scripts = [
@@ -37,11 +30,17 @@ external_stylesheets = [
     }
 ]
 
-app = dash.Dash(external_scripts=external_scripts,
-                external_stylesheets=external_stylesheets)
+
+app = dash.Dash(external_stylesheets=external_stylesheets,
+                external_scripts=external_scripts)
+
+# app.scripts.config.serve_locally = True
+# app.css.config.serve_locally = True
+
 host = 'ec2-3-229-236-236.compute-1.amazonaws.com'
 tbl_name = "test"
 selected_col = 'purchase_price'
+
 
 def load_data(query):
     conn= psycopg2.connect(host=host, user='postgres', password=db_password)
@@ -110,9 +109,9 @@ app.layout = html.Div([
         html.Div([
             html.H1("Trading Strategy Back Testing Dashboard"),
             html.H5("MVP testing version 1.1"),],
-            style={'padding-left': '200px',
-                   'padding-bottom':'20px',
-                   'padding-top':'20px',
+            style={'paddingLeft': '10%',
+                   'paddingBottom':'10%',
+                   'paddingTop':'10%',
                    'backgroundColor': '#74F3FF'
                     }),
 
@@ -130,8 +129,8 @@ app.layout = html.Div([
                              ),
             ], style={'width': '30%',
                       'fontSize': '15px',
-                      'padding-top': '10px',
-                      'padding-left': '30px',
+                      'paddingTop': '10%',
+                      'paddingLeft': '10%',
                       'display': 'inline-block'}),
 
             # Ticker based on Sector
@@ -144,14 +143,14 @@ app.layout = html.Div([
                                  )
                 ], style={'width': '30%',
                           'fontSize': '15px',
-                          'padding-top': '10px',
-                          'padding-left': '30px',
+                          'paddingTop': '10%',
+                          'paddingLeft': '10%',
                           'display': 'inline-block'}),
         ],
             style={
             'borderBottom': 'thin lightgrey solid',
             'backgroundColor': 'rgb(250, 250, 250)',
-            'padding': '10px 5px'
+            'padding': '5% 5%'
             }
         ),
 
@@ -168,8 +167,8 @@ app.layout = html.Div([
                             value=[1, N+step]
                             )
                 ], style={'width': '90%',
-                          'fontSize': '20px',
-                          'padding-left': '100px',
+                          'fontSize': '30%',
+                          'paddingLeft': '10%',
                           'display': 'inline-block',
                           })
     ])
@@ -224,6 +223,8 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
     fig = go.Figure(data=[trace_1], layout=layout)
     return fig
 
+
+server = app.server
 
 if __name__ == '__main__':
     app.run_server(debug=True)
