@@ -92,7 +92,7 @@ Testing results shows that reading in many csv files are much slower than readin
 It seems to be a good choice to convert many csv files into one large parquet file at once to greatly enhance the performance.
 After conversion, 70G of csv files will be compressed to a 40G parquet file.
 
-### Transformation
+## Transformation
 The defined naïve trading strategy goes as follows: for each beginning of the month, choose to buy 100 dollar worth of a stock
 if the price of 7-day moving average is less than the previous day closing price. Profit and Loss (PnL) for each trad is simply calculated 
 from the multiplication of the volume, and the difference of the last price of the period for each stock and the purchase price
@@ -101,25 +101,25 @@ saved in a table in Postgres Database.  100 dollar and 7-day are variables arbit
 
 After tuning the spark job, processing each 40G parquet file takes 17-21 mins.
 
-### Database
+## Database
 Sample of the result table.
 
 ![screenshot_result](static/ScreenShot_Results.png)
 
 
-### Visualization
+## Visualization
 Multiple choice dropdown of sectors which determines the tickers' dropdown list.
 Rangeslider for the time period.
 ![UI_final](static/UI_final.png)
 
-### Further Development
+## Further Development
 
 Plan for possible product.
 ![overview](static/overview.png)
 
 
 
-### Notes on setting the environment
+## Notes on setting the environment
 
 1. Following this [pegasus](https://blog.insightdatascience.com/how-to-get-hadoop-and-spark-up-and-running-on-aws-7a1b0ab55459) 
 instruction to start a spark cluster on EC2 instances. In this case, there are 3 workers and 1 master all on m4.large 
@@ -155,3 +155,8 @@ export SPARK_CLASSPATH= <path to downloaded jar>/postgresql-42.2.8.jar
 pyspark
 spark-submit --driver-class-path <path to downloaded jar>/postgresql-42.2.8.jar  <file_name>.py
 ```
+
+6. Run Dash on Server
+    - Install Python3, psycopg2, flask, dash, gunicorn and pandas
+    - If not under root user ```export PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin```
+    - Under root user run ```gunicorn -b 0.0.0.0:80 -w 4 -t 120 app_dash:server```

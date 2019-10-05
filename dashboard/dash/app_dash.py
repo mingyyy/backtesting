@@ -10,7 +10,6 @@ import psycopg2
 
 # external JavaScript files
 external_scripts = [
-    'https://www.google-analytics.com/analytics.js',
     {'src': 'https://cdn.polyfill.io/v2/polyfill.min.js'},
     {
         'src': 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.10/lodash.core.js',
@@ -41,16 +40,16 @@ host = 'ec2-3-229-236-236.compute-1.amazonaws.com'
 tbl_name = "test"
 selected_col = 'purchase_price'
 
-
-def load_data(query):
+params = {'tbl_name': tbl_name, 'sector': sector, 'ticker': ticker, 'col': col}
+def load_data(query, params):
     conn= psycopg2.connect(host=host, user='postgres', password=db_password)
     sql_command = (query)
-    df = pd.read_sql(sql_command, conn)
+    df = pd.read_sql(sql_command, conn, params=params)
     return df
 
 
 def get_sector(tbl_name):
-    q = "SELECT sector FROM {} GROUP BY sector;".format(tbl_name)
+    q = "SELECT sector FROM %(tbl_name)s GROUP BY sector;"
     sector_list = load_data(q)['sector']
     opts_sector = [{'label': i, 'value': i} for i in sector_list]
     return opts_sector
@@ -58,9 +57,9 @@ def get_sector(tbl_name):
 
 def get_stock(tbl_name, sector):
     if len(sector) == 0:
-        q = "SELECT ticker FROM {} GROUP BY ticker;".format(tbl_name)
+        q = "SELECT ticker FROM %(tbl_name)s GROUP BY ticker;"
     else:
-        q = "SELECT ticker FROM {} GROUP BY sector, ticker HAVING sector IN ({});".format(tbl_name, sector)
+        q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector IN %(sector)s;"
     ticker_list = load_data(q)['ticker']
     opts = [{'label':  i, 'value': i} for i in ticker_list]
     return opts
@@ -128,8 +127,8 @@ app.layout = html.Div([
                              multi=True
                              ),
             ], style={'width': '30%',
-                      'fontSize': '15px',
-                      'paddingTop': '10%',
+                      'fontSize': '100%',
+                      'paddingTop': '1%',
                       'paddingLeft': '10%',
                       'display': 'inline-block'}),
 
@@ -142,8 +141,8 @@ app.layout = html.Div([
                                  placeholder="Choose a ticker",
                                  )
                 ], style={'width': '30%',
-                          'fontSize': '15px',
-                          'paddingTop': '10%',
+                          'fontSize': '100%',
+                          'paddingTop': '1%',
                           'paddingLeft': '10%',
                           'display': 'inline-block'}),
         ],
