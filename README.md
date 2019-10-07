@@ -26,7 +26,9 @@ so the security, cost and efficiency issues could be addressed properly.
 
 
 ## Overview
-The main idea of this project is to build a pipeline that helps business to better handle their historical files.
+The main focus of this project is to build a pipeline from raw csv files to a cloud storage to data processing to a database and 
+finally to the consumer through a user interface. 
+
 ![pipeline](static/pipeline.png)
 
 Therefore, following along the pipeline, I demonstrate how to migrate large amount of csv files of different sizes, 
@@ -98,7 +100,7 @@ Testing results show that reading in many csv files are much slower than reading
 It seems to be a good choice, to convert many csv files into one large parquet file at once to greatly enhance the performance.
 After conversion, 70G of csv files will be compressed to a 40G parquet file.
 
-### Transformation
+## Transformation
 The defined naïve trading strategy goes as follows: for each beginning of the month, choose to buy 100 dollar worth of a stock
 if the price of the 7-day moving average is less than the previous day closing price. Profit and Loss (PnL) for each trade is simply calculated 
 from the multiplication of the volume and the difference of the last price of the period for each stock and the purchase price.
@@ -107,7 +109,7 @@ saved in a table in Postgres Database.  100 dollar and 7-day are variables arbit
 
 After tuning the spark job, processing each 40G parquet file takes 17-21 mins on a spark cluster of 1 master and 3 workers on m4.Large EC2 instances.
 
-### Database
+## Database
 Sample of the result table.
 
 ![screenshot_result](static/ScreenShot_Results.png)
@@ -128,10 +130,9 @@ Starting from the web UI, user choose the CSV files to be uploaded to S3. The in
 User could make changes by choosing the right types if the suggested ones are inappropriate. Then the final type got used in the process.
 After processing the predefined analysis/transformation, user will be able to interact with the results from Web UI. 
 
- 
 
 
-### Notes on setting the environment
+## Notes on setting the environment
 
 1. Following this [pegasus](https://blog.insightdatascience.com/how-to-get-hadoop-and-spark-up-and-running-on-aws-7a1b0ab55459) 
 instruction to start a spark cluster on EC2 instances. In this case, there are 3 workers and 1 master all on m4.large 
@@ -177,3 +178,8 @@ export SPARK_CLASSPATH= <path to downloaded jar>/postgresql-42.2.8.jar
 pyspark
 spark-submit --driver-class-path <path to downloaded jar>/postgresql-42.2.8.jar  <file_name>.py
 ```
+
+6. Run Dash on Server
+    - Install Python3, psycopg2, flask, dash, gunicorn and pandas
+    - If not under root user ```export PATH=/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin```
+    - Under root user run ```gunicorn -b 0.0.0.0:80 -w 4 -t 120 app_dash:server```

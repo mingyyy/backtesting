@@ -63,10 +63,12 @@ def get_sector(tbl_name):
 def get_stock(tbl_name, sector):
     if len(sector) == 0:
         q = "SELECT ticker FROM %(tbl_name)s GROUP BY ticker;"
-        params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': None, 'col': AsIs(selected_col)}
+        params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': None,
+                  'col': AsIs(selected_col)}
     elif type(sector) is list and len(sector) != 1:
         q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector IN %(sector)s;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': AsIs(tuple(sector)), 'ticker': selected_ticker, 'col': AsIs(selected_col)}
+
     elif type(sector) is str:
         q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector = %(sector)s;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
@@ -96,7 +98,7 @@ end_date = first_dates['purchase_date'].max()
 
 # Load Data from Postgres for graph
 q = "SELECT purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker=%(ticker)s ORDER BY purchase_date;"
-params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': first_ticker, 'col': AsIs(selected_col)}
+params = {'tbl_name': AsIs(tbl_name), 'sector': first_sector, 'ticker': first_ticker, 'col': AsIs(selected_col)}
 df_init = load_data(q, params)
 
 
@@ -199,29 +201,11 @@ def update_ticker_options(selected_sector):
 
 
 @app.callback(Output('output-graph', 'figure'),
-             [Input('opt_sector', 'value'),
-              Input('opt_ticker', 'value'),
+             [Input('opt_ticker', 'value'),
               Input('slider', 'value')])
-def update_figure(selected_sector, selected_ticker, selected_dates):
-    # selected_sector could be list or str, get the right input for sector selection
-    # str = get_sector_choices(selected_sector)
-    # handling edge case: when no sector chosen
-
-    if len(selected_sector) == 0:
-        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
-    elif type(selected_sector) is str:
-        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
-    else:
-        if len(selected_sector) == 1:
-            query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector = %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector[0], 'ticker': selected_ticker,
-              'col': AsIs(selected_col)}
-        else:
-            query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector IN %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name), 'sector': tuple(selected_sector), 'ticker': selected_ticker,
-              'col': AsIs(selected_col)}
+def update_figure( selected_ticker, selected_dates):
+    query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker = %(ticker)s ORDER BY purchase_date;"
+    params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
 
     df_update = load_data(query, params)
 
