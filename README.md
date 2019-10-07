@@ -19,7 +19,9 @@ so the security, cost and efficiency issues could be addressed properly.
 
 
 ## Overview
-The main idea of this project is to build a pipeline that helps business to better handle their historical files.
+The main focus of this project is to build a pipeline from raw csv files to a cloud storage to data processing to a database and 
+finally to the consumer through a user interface. 
+
 ![pipeline](static/pipeline.png)
 
 Therefore, following along the pipeline, I am going to demonstrate how to migrate large amount of csv files, 
