@@ -38,7 +38,7 @@ app = dash.Dash(external_stylesheets=external_stylesheets,
 # app.css.config.serve_locally = True
 
 host = end_point
-tbl_name = 'test'
+tbl_name = 'test2'
 selected_col = 'purchase_price'
 selected_sector = None
 selected_ticker = None
@@ -124,10 +124,10 @@ app.layout = html.Div([
         # Header
         html.Div([
             html.H1("Trading Strategy Back Testing Dashboard"),
-            html.H5("MVP testing version 1.1"),],
+            html.H5("Final testing version 1.0"),],
             style={'paddingLeft': '10%',
-                   'paddingBottom':'2%',
-                   'paddingTop':'2%',
+                   'paddingBottom':'2.5%',
+                   'paddingTop':'3%',
                    'backgroundColor': '#74F3FF'
                     }),
 
