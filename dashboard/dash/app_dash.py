@@ -38,7 +38,7 @@ app = dash.Dash(external_stylesheets=external_stylesheets,
 # app.css.config.serve_locally = True
 
 host = end_point
-tbl_name = 'test'
+tbl_name = 'test2'
 selected_col = 'purchase_price'
 selected_sector = None
 selected_ticker = None
@@ -117,17 +117,18 @@ trace_1 = go.Scatter(x=df_init.purchase_date, y=df_init[selected_col],name=selec
                     line=dict(width=2, color='rgb(229, 151, 50)'),mode='markers')
 layout = go.Layout(title='Profit & Loss Plot', hovermode='closest')
 fig = go.Figure(data=[trace_1], layout=layout)
-
+fig.update_xaxes(title_text='Year')
+fig.update_yaxes(title_text='Profit&Loss ($)')
 
 # Create a Dash layout
 app.layout = html.Div([
         # Header
         html.Div([
             html.H1("Trading Strategy Back Testing Dashboard"),
-            html.H5("MVP testing version 1.1"),],
+            html.H5("Final testing version 1.0"),],
             style={'paddingLeft': '10%',
-                   'paddingBottom':'2%',
-                   'paddingTop':'2%',
+                   'paddingBottom':'2.5%',
+                   'paddingTop':'3%',
                    'backgroundColor': '#74F3FF'
                     }),
 
@@ -237,6 +238,8 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
                         line=dict(width=1, color='rgb(229, 151, 50)',),
                          mode='markers')
     fig = go.Figure(data=[trace_1], layout=layout)
+    fig.update_xaxes(title_text='Year')
+    fig.update_yaxes(title_text='Profit&Loss ($)')
     return fig
 
 
