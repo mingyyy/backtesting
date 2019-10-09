@@ -117,7 +117,8 @@ trace_1 = go.Scatter(x=df_init.purchase_date, y=df_init[selected_col],name=selec
                     line=dict(width=2, color='rgb(229, 151, 50)'),mode='markers')
 layout = go.Layout(title='Profit & Loss Plot', hovermode='closest')
 fig = go.Figure(data=[trace_1], layout=layout)
-
+fig.update_xaxes(title_text='Year')
+fig.update_yaxes(title_text='Profit&Loss ($)')
 
 # Create a Dash layout
 app.layout = html.Div([
@@ -237,6 +238,8 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
                         line=dict(width=1, color='rgb(229, 151, 50)',),
                          mode='markers')
     fig = go.Figure(data=[trace_1], layout=layout)
+    fig.update_xaxes(title_text='Year')
+    fig.update_yaxes(title_text='Profit&Loss ($)')
     return fig
 
 
