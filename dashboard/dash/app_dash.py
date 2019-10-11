@@ -39,6 +39,7 @@ app = dash.Dash(external_stylesheets=external_stylesheets,
 
 host = end_point
 tbl_name = 'test2'
+tbl_name_ticker = 'test'
 selected_col = 'purchase_price'
 selected_sector = None
 selected_ticker = None
@@ -96,7 +97,7 @@ end_date = first_dates['purchase_date'].max()
 
 # Load Data from Postgres for graph
 q = "SELECT purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker=%(ticker)s ORDER BY purchase_date;"
-params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': first_ticker, 'col': AsIs(selected_col)}
+params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': None, 'ticker': first_ticker, 'col': AsIs(selected_col)}
 df_init = load_data(q, params)
 
 
@@ -153,6 +154,8 @@ app.layout = html.Div([
 
             # Ticker based on Sector
             html.Div(
+
+
                 [   html.H5('Select a ticker'),
                     dcc.Dropdown(id='opt_ticker',
                                  options=opts_ticker,
@@ -210,18 +213,18 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
 
     if len(selected_sector) == 0:
         query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
+        params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     elif type(selected_sector) is str:
         query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
+        params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': selected_sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     else:
         if len(selected_sector) == 1:
             query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector = %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector[0], 'ticker': selected_ticker,
+            params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': selected_sector[0], 'ticker': selected_ticker,
               'col': AsIs(selected_col)}
         else:
             query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector IN %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name), 'sector': tuple(selected_sector), 'ticker': selected_ticker,
+            params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': tuple(selected_sector), 'ticker': selected_ticker,
               'col': AsIs(selected_col)}
 
     df_update = load_data(query, params)
@@ -240,6 +243,7 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
     fig = go.Figure(data=[trace_1], layout=layout)
     fig.update_xaxes(title_text='Year')
     fig.update_yaxes(title_text='Profit&Loss ($)')
+
     return fig
 
 
