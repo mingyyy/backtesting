@@ -83,7 +83,6 @@ Since MS Excel is [arguably the most important computer program in workplace aro
 focusing on how to handle large amount of different sizes of csv files seems to be a sensible choice.
 
 
-
 ## Conversion
 1. ```file_convertor.py``` reads in the csv files from S3 bucket and write to S3 bucket as parquet files.
 2. ```field_detector.py``` infers the header types from the csv file, translates the spark data types to postgres types (works with some most used types), 

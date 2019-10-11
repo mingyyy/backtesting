@@ -153,6 +153,8 @@ app.layout = html.Div([
 
             # Ticker based on Sector
             html.Div(
+
+
                 [   html.H5('Select a ticker'),
                     dcc.Dropdown(id='opt_ticker',
                                  options=opts_ticker,
