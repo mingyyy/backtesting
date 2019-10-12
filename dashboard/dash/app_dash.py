@@ -38,8 +38,7 @@ app = dash.Dash(external_stylesheets=external_stylesheets,
 # app.css.config.serve_locally = True
 
 host = end_point
-tbl_name = 'test2'
-tbl_name_ticker = 'test'
+tbl_name = 'test'
 selected_col = 'purchase_price'
 selected_sector = None
 selected_ticker = None
@@ -66,13 +65,13 @@ def get_stock(tbl_name, sector):
         q = "SELECT ticker FROM %(tbl_name)s GROUP BY ticker;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': None, 'col': AsIs(selected_col)}
     elif type(sector) is list and len(sector) != 1:
-        q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector IN %(sector)s;"
+        q = "SELECT ticker FROM %(tbl_name)s WHERE sector IN %(sector)s GROUP BY sector, ticker;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': AsIs(tuple(sector)), 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     elif type(sector) is str:
-        q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector = %(sector)s;"
+        q = "SELECT ticker FROM %(tbl_name)s WHERE sector=%(sector)s GROUP BY sector, ticker;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     else:
-        q = "SELECT ticker FROM %(tbl_name)s GROUP BY sector, ticker HAVING sector = %(sector)s;"
+        q = "SELECT ticker FROM %(tbl_name)s WHERE sector=%(sector)s GROUP BY sector, ticker;"
         params = {'tbl_name': AsIs(tbl_name), 'sector': sector[0], 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     ticker_list = load_data(q, params)['ticker']
     opts = [{'label':  i, 'value': i} for i in ticker_list]
@@ -97,7 +96,7 @@ end_date = first_dates['purchase_date'].max()
 
 # Load Data from Postgres for graph
 q = "SELECT purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker=%(ticker)s ORDER BY purchase_date;"
-params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': None, 'ticker': first_ticker, 'col': AsIs(selected_col)}
+params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': first_ticker, 'col': AsIs(selected_col)}
 df_init = load_data(q, params)
 
 
@@ -212,19 +211,19 @@ def update_figure(selected_sector, selected_ticker, selected_dates):
     # handling edge case: when no sector chosen
 
     if len(selected_sector) == 0:
-        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
+        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker = %(ticker)s GROUP BY ticker, purchase_date, %(col)s ORDER BY purchase_date;"
+        params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     elif type(selected_sector) is str:
-        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s GROUP BY ticker, purchase_date, %(col)s HAVING ticker = %(ticker)s ORDER BY purchase_date;"
-        params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': selected_sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
+        query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE ticker = %(ticker)s GROUP BY ticker, purchase_date, %(col)s ORDER BY purchase_date;"
+        params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector, 'ticker': selected_ticker, 'col': AsIs(selected_col)}
     else:
         if len(selected_sector) == 1:
             query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector = %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': selected_sector[0], 'ticker': selected_ticker,
+            params = {'tbl_name': AsIs(tbl_name), 'sector': selected_sector[0], 'ticker': selected_ticker,
               'col': AsIs(selected_col)}
         else:
             query = "SELECT ticker, purchase_date, %(col)s FROM %(tbl_name)s WHERE sector IN %(sector)s AND ticker = %(ticker)s ORDER BY purchase_date;"
-            params = {'tbl_name': AsIs(tbl_name_ticker), 'sector': tuple(selected_sector), 'ticker': selected_ticker,
+            params = {'tbl_name': AsIs(tbl_name), 'sector': tuple(selected_sector), 'ticker': selected_ticker,
               'col': AsIs(selected_col)}
 
     df_update = load_data(query, params)
