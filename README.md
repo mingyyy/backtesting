@@ -36,7 +36,7 @@ close to 2000 csv files and about 437GB in total, to AWS S3 bucket;
 converting cvs files into parquet files which to be stored in S3 bucket; performing a naive trading strategy with the whole dataset and 
 export the results to a Postgres database. Finally, a DASH front end was built for the user to interact with the results in database.
 
-The structure of the directory are mapped according to this tree:
+The structure of the directory is mapped according to this tree:
 ```
 backtesting
     |- cli
@@ -75,8 +75,8 @@ In order to fully test out this scenario, I simulated the following files and st
 |100|700|
 |100|1,400|
 
-Each file contains pseudo historical stock prices generated from Merton's Jump SDE model, with a 6 digits ticker, from year 1900 to 2019,
-across 12 sectors. 
+Each file contains pseudo daily historical stock prices generated from Merton's jump diffusion model, 
+with a 6-digit ticker, from year 1900 to 2019, across 12 sectors. 
 
 **Why csv files?**
 Since MS Excel is [arguably the most important computer program in workplace around](https://www.investopedia.com/articles/personal-finance/032415/importance-excel-business.asp) the world, 
