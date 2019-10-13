@@ -129,14 +129,15 @@ Starting from the web UI, user choose the CSV files to be uploaded to S3. The in
 User could make changes by choosing the right types if the suggested ones are inappropriate. Then the final type got used in the process.
 After processing the predefined analysis/transformation, user will be able to interact with the results from Web UI. 
 
-
+Further development could introduce even greater flexibility of choices of databases, scheduled batch run to store csv files or reports, 
+possibilities to define transformations using SQL etc...
 
 ## Notes on setting the environment
 
 1. Following this [pegasus](https://blog.insightdatascience.com/how-to-get-hadoop-and-spark-up-and-running-on-aws-7a1b0ab55459) 
 instruction to start a spark cluster on EC2 instances. In this case, there are 3 workers and 1 master all on m4.large 
 with Ubuntu 16.04 images.
-2. Install all the necessary packages according to requirements.txt
+2. Install all the necessary packages according to requirements.txt.
 3. Configure for Spark History Server. 
     - Useful [link](https://www.ibm.com/support/knowledgecenter/en/SS3MQL_1.1.1/management_sym/spark_configuring_history_service.html)
      on how to configure spark history server.
@@ -156,8 +157,8 @@ with Ubuntu 16.04 images.
         ```
         starting org.apache.spark.deploy.history.HistoryServer, logging to /usr/local/spark/logs/spark-root-org.apache.spark.deploy.history.HistoryServer-1-ip-10-0-0-6.out
         ```
-    - And now WebUI with port 18080 should work
-4. Configure for connecting to Postgres Database, in this case M4.Large EC2 instance, 16.04 Ubuntu image.
+    - And now WebUI with port 18080 should work.
+4. Configure for connecting to Postgres Database, in this case hosted in another m4.Large EC2 instance, 16.04 Ubuntu image.
 
     - Two conf files need to be changed on the server(10 is the Postgres version): 
         ```/etc/postgresql/10/main/pg_hba.conf``` and ```/etc/postgresql/10/main/postgresql.conf```
@@ -168,7 +169,7 @@ with Ubuntu 16.04 images.
     ```listen_addresses = '*'```
     - Restart your postgresql: ```$sudo service postgresql start```
     
-    - Check the status again:  ```$ sudo service postgresql status```
+    - Check the status again:  ```$sudo service postgresql status```
 5. Run Spark 
 ```
 export PYSPARK_PYTHON=python3;

@@ -87,8 +87,9 @@ first_ticker = opts_ticker[0]['value']
 
 
 # Define Range Slider options
-q = "SELECT purchase_date FROM %(tbl_name)s GROUP BY purchase_date ORDER BY purchase_date;"
-params = {'tbl_name': AsIs(tbl_name), 'sector': None, 'ticker': None, 'col': AsIs(selected_col)}
+# q = "SELECT purchase_date FROM %(tbl_name)s GROUP BY purchase_date ORDER BY purchase_date;"
+q = "SELECT purchase_date FROM %(tbl_name)s;"
+params = {'tbl_name': AsIs('tbl_dates'), 'sector': None, 'ticker': None, 'col': AsIs(selected_col)}
 first_dates = load_data(q, params)
 start_date = first_dates['purchase_date'].min()
 end_date = first_dates['purchase_date'].max()
