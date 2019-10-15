@@ -4,14 +4,13 @@
 
 1. [Motivation](#motivation)
 2. [Overview](#overview)
-3. [Pipeline](#pipeline)
-4. [Dataset](#dataset)
-5. [Conversion](#conversionn)
-6. [Transformation](#transformation)
-7. [Database](#database)
-8. [Visualization](#visualization)
-9. [Vision](#vision)
-10. [Notes](#notes-on-setting-the-environment)
+3. [Dataset](#dataset)
+4. [Conversion](#conversion)
+5. [Transformation](#transformation)
+6. [Database](#database)
+7. [Visualization](#visualization)
+8. [Vision](#vision)
+9. [Notes](#notes-on-setting-the-environment)
 
 ## Motivation
 In my previous jobs, I have seen the same problems with data management over and over again, 
