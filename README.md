@@ -114,16 +114,16 @@ Sample of the result table.
 
 To enhance the performance, the table is indexed by three columns, namely ticker, sector and purchase_date.
 
-### Visualization
+## Visualization
 Multiple choices drop down of sectors determines the drop down list of the tickers.
 Range slider for the time period and the PnL for each ticker, each day are interactive thanks for Dash in Flask.
 
 ![UI_final](static/UI_final.png)
 
-### Vision
+## Vision
 
 Plan for futher development to make this product more user friendly and tech-light for the user.
-![overview](static/overview.png)
+![overview](static/OVERVIEW.png)
 Starting from the web UI, user choose the CSV files to be uploaded to S3. The inferred schema then will be presented to user for confirmation.
 User could make changes by choosing the right types if the suggested ones are inappropriate. Then the final type got used in the process.
 After processing the predefined analysis/transformation, user will be able to interact with the results from Web UI. 
