@@ -126,21 +126,22 @@ The UI also offers an interactive range slider for the time period and the PnL f
 
 ## Vision
 
-Plan for futher development to make this product more user-friendly and tech-light:
+Plan for further development to make this product more user-friendly and tech-light:
 
 * Starting from the web UI, the user chooses the csv files to be uploaded to S3.
 * The inferred schema then will be presented to the user for confirmation.
 * The User can make changes by choosing the right types if the suggested ones are inappropriate. The final types chosen will be used in the rest of the process.
-* After processing the predefined analysis/transformation, the user will be able to interact with the results therough the Web UI. 
+* After processing the predefined analysis/transformation, the user will be able to interact with the results through the Web UI. 
+
 
 ![overview](static/OVERVIEW.png)
 
-Further development could introduce:
+In a later stage, the following could be introduced to make the product more robust and generic for different use cases:
 
-* even greater flexibility for choosing a databases
-* scheduled batch runs to store csv files or reports
-* possibility to define transformations using SQL
-* etc.
+* Greater flexibility for choosing a databases
+* Orchestration tools could be added to handle periodical updates automatically.
+* Possibility to define transformations using SQL
+* Extension to different file format (e.g. xml, pdf, etc).
 
 ## Notes on setting the environment
 
